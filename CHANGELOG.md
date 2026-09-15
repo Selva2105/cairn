@@ -12,3 +12,8 @@ All notable changes to this project are documented here. Format follows [Keep a 
 - Tailwind v3 + shadcn/ui design system (clay/moss theme) wired into `apps/web`.
 - M3 backend: `DocumentsModule` CRUD, document-expiry scanning in the pipeline, a WhatsApp Cloud API channel with a signature-verified inbound webhook, and a manual-entry connector driven by a small WhatsApp command grammar.
 - M3 frontend: the real `apps/web` dashboard -- login/signup, an overview page (activity timeline + digest history), documents (list + add form), and household settings (members, invite/join, WhatsApp number). Added `GET /auth/session` and a minimal `NotificationsModule` read endpoint to support it.
+- M4 household features: `TasksModule` (CRUD + dashboard task board), a correlation-ID interceptor on every API request, and a Redis-aware health check.
+
+### Fixed
+
+- Household invite generation and task deletion were checking the JWT's `role` claim, which is scoped to whichever household was active at login/refresh and doesn't reflect a user's role in a _different_ household a route references. Both now check the actual per-household membership row instead.
