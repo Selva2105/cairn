@@ -14,6 +14,8 @@ All notable changes to this project are documented here. Format follows [Keep a 
 - M3 frontend: the real `apps/web` dashboard -- login/signup, an overview page (activity timeline + digest history), documents (list + add form), and household settings (members, invite/join, WhatsApp number). Added `GET /auth/session` and a minimal `NotificationsModule` read endpoint to support it.
 - M4 household features: `TasksModule` (CRUD + dashboard task board), a correlation-ID interceptor on every API request, and a Redis-aware health check.
 - M5 deployment prep: `output: 'standalone'` for `apps/web`, the Vercel Cron trigger route (`GET /api/cron/trigger-pipeline`), `vercel.json`, and the Neon pooled/direct (`DATABASE_URL`/`DIRECT_DATABASE_URL`) connection split.
+- M6 stretch: a `RulesModule` (owner-scoped CRUD) backing rules DSL v2 -- a declarative JSON rule format that, once a household configures rules for an event type, replaces the v1 hardcoded rules for it entirely; a Calendar connector (Google Calendar events matched by a maintenance-keyword heuristic); an OCR receipt-scan connector (self-hosted Tesseract.js) plus a new `POST /households/:householdId/receipts/scan` multipart upload endpoint that runs OCR and records a `BillDetected` event on demand, rather than on the cron-polled pipeline; and PWA basics for the dashboard -- a web app manifest, icons, and a network-first service worker.
+- Root `package.json` scripts for day-to-day workflow: per-app dev servers, a combined `dev`, Docker Compose helpers (`dev:up`/`dev:down`), Prisma shortcuts, and a `verify` that runs typecheck/lint/test/build across the workspace.
 
 ### Fixed
 
