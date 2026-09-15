@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: cairn
+      POSTGRES_PASSWORD: cairn
+      POSTGRES_DB: cairn
+    ports: ['5432:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
+
+  redis:
+    image: redis:7
+    ports: ['6380:6379']
+
+  mailhog:
+    image: mailhog/mailhog
+    ports: ['11025:1025', '18025:8025']
+
+  adminer:
+    image: adminer
+    ports: ['8080:8080']
+
+volumes:
+  pgdata:

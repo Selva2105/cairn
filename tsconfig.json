@@ -1,0 +1,62 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/web-e2e"
+    },
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./apps/worker"
+    },
+    {
+      "path": "./apps/bot"
+    },
+    {
+      "path": "./libs/domain"
+    },
+    {
+      "path": "./libs/auth"
+    },
+    {
+      "path": "./libs/rules-engine"
+    },
+    {
+      "path": "./libs/notifications"
+    },
+    {
+      "path": "./libs/database"
+    },
+    {
+      "path": "./libs/connectors/gmail"
+    },
+    {
+      "path": "./libs/connectors/calendar"
+    },
+    {
+      "path": "./libs/connectors/manual-entry"
+    },
+    {
+      "path": "./libs/connectors/ocr"
+    },
+    {
+      "path": "./libs/shared/constants"
+    },
+    {
+      "path": "./libs/shared/config"
+    },
+    {
+      "path": "./libs/shared/utils"
+    },
+    {
+      "path": "./libs/ui"
+    }
+  ],
+  "compilerOptions": {}
+}

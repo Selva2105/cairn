@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+FROM node:24-alpine AS build
+WORKDIR /workspace
+RUN corepack enable
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm exec nx build api
+
+FROM node:24-alpine AS runtime
+WORKDIR /app
+RUN addgroup -S cairn && adduser -S cairn -G cairn
+COPY --from=build /workspace/dist/apps/api ./
+RUN corepack enable && pnpm install --prod --frozen-lockfile || true
+USER cairn
+EXPOSE 3000
+CMD ["node", "main.js"]

@@ -10,7 +10,7 @@ This document is both a design spec and a build plan. Keep it at the root of the
 
 ## 1. Product Brief (recap)
 
-**Problem:** Hectic daily life isn't usually a task-list problem — it's a *noticing* problem. You don't miss a bill because you lack a place to track it; you miss it because nothing tells you it's due until it's late. Generic todo apps assume you already know what needs doing.
+**Problem:** Hectic daily life isn't usually a task-list problem — it's a _noticing_ problem. You don't miss a bill because you lack a place to track it; you miss it because nothing tells you it's due until it's late. Generic todo apps assume you already know what needs doing.
 
 **Solution:** Cairn ingests messy, heterogeneous signals — forwarded emails, calendar events, manually logged events, scanned receipts/documents — normalizes them into domain events, evaluates them against a rules engine, and delivers timely alerts through whichever channel you'll actually see (daily digest email, WhatsApp, dashboard).
 
@@ -20,34 +20,34 @@ This document is both a design spec and a build plan. Keep it at the root of the
 
 ## 2. What This Project Is Meant to Prove
 
-| Area | What it demonstrates | Where in this doc |
-|---|---|---|
-| **Architecture** | Event-driven design, plugin/connector abstraction, idempotency & retry handling, clean separation of ingestion / domain / delivery, monorepo dependency design enforced by Nx module boundaries, trigger-agnostic pipeline (queue consumer locally, cron-triggered function in production) | §5, §6, §9, §10, §13, §17.3, §18 |
-| **Coding** | Strict typing across a real monorepo, testing pyramid, design patterns used deliberately (Strategy, Observer, Chain of Responsibility), naming conventions, zero magic-string discipline, CI quality gates | §14, §15, §17, §18 |
-| **Project management** | ADRs, RFC process, milestone/epic roadmap, issue/PR discipline, risk register, changelog & semver | §16, §17 |
+| Area                   | What it demonstrates                                                                                                                                                                                                                                                                       | Where in this doc                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+| **Architecture**       | Event-driven design, plugin/connector abstraction, idempotency & retry handling, clean separation of ingestion / domain / delivery, monorepo dependency design enforced by Nx module boundaries, trigger-agnostic pipeline (queue consumer locally, cron-triggered function in production) | §5, §6, §9, §10, §13, §17.3, §18 |
+| **Coding**             | Strict typing across a real monorepo, testing pyramid, design patterns used deliberately (Strategy, Observer, Chain of Responsibility), naming conventions, zero magic-string discipline, CI quality gates                                                                                 | §14, §15, §17, §18               |
+| **Project management** | ADRs, RFC process, milestone/epic roadmap, issue/PR discipline, risk register, changelog & semver                                                                                                                                                                                          | §16, §17                         |
 
-Be able to explain *why*, not just *what*, for every item in this table — that's what separates this from a tutorial project in an interview.
+Be able to explain _why_, not just _what_, for every item in this table — that's what separates this from a tutorial project in an interview.
 
 ---
 
 ## 3. Tech Stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Frontend | **Next.js (App Router) + React + TypeScript** | Dashboard UI, server components for data-heavy views, API routes only for BFF concerns (real domain logic stays in NestJS). |
-| UI kit | **Tailwind CSS + shadcn/ui** | Fast, accessible, ownable components (not a black-box UI library) — good for a shared `libs/ui`. |
-| Backend API | **NestJS** | Modular, DI-based, first-class support for guards/interceptors/pipes — gives you a legitimate reason to talk about layered architecture (controllers → services → repositories) instead of one big Express file. |
-| Workers | **NestJS microservice (or standalone Node worker) + BullMQ** | Hosts connectors and the rules engine; consumes queued jobs, isolated from the request/response API process. |
-| Database | **PostgreSQL** (Docker) + **Prisma ORM** | Relational fits the domain (households, users, documents, bills, tasks, events) well; Prisma gives you migrations + type-safe queries. |
-| Event bus / queue | **Redis + BullMQ** | Deliberately *not* Kafka — write the ADR explaining that a single-tenant household system doesn't need partitioned log semantics, and Redis Streams/BullMQ gives you pub/sub + reliable job queues with far less operational weight. This restraint is itself a good architecture talking point. |
-| Auth | **Native auth in NestJS** — email/password with argon2id hashing + rotating JWT (access/refresh), plus **Google SSO** via `passport-google-oauth20` | No NextAuth.js — the API is the single authority that issues and validates tokens for web, bot, and any future client, instead of splitting session logic across two frameworks. See §10. |
-| Notifications | **WhatsApp Cloud API (Meta), Nodemailer, Web Push (stretch)** | Channel abstraction package — each is a pluggable adapter. WhatsApp Cloud API direct from Meta (not Twilio) gives a free test business number that can message up to 5 verified recipient numbers at no cost — plenty for a household-scale demo. See §18. |
-| Monorepo tooling | **Nx + pnpm workspaces** | Project graph + `nx affected` (only build/test/lint what actually changed), enforced module boundaries via tags (§17.3), built-in generators for scaffolding new libs/connectors (§17.7) — more architecture-discipline mileage than Turborepo for a project meant to showcase system design. |
-| Containers | **Docker + Docker Compose** (local), Dockerfile per app | Postgres, Redis, Mailhog (local email capture), Adminer as local infra services. |
-| Observability | **pino (structured logs)** + **OpenTelemetry** (traces across API → queue → worker) | Correlate a single event across process boundaries — this is the detail that proves you understand distributed systems, not just CRUD. |
-| Testing | **Vitest/Jest, Supertest, Playwright, Testcontainers** | Unit → integration → e2e pyramid, see §13. |
-| Git hooks / quality gates | **Husky + lint-staged + commitlint** | Pre-commit lint/format on staged files, commit-msg enforces Conventional Commits, pre-push runs `nx affected`. See §17.4. |
-| CI/CD | **GitHub Actions** using `nx affected` + Nx remote caching | Lint → typecheck → test → build → deploy `apps/web` to Vercel and `apps/api` to Render, both free tiers — see §18 for the full $0 deployment topology. |
+| Layer                     | Choice                                                                                                                                              | Why                                                                                                                                                                                                                                                                                              |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend                  | **Next.js (App Router) + React + TypeScript**                                                                                                       | Dashboard UI, server components for data-heavy views, API routes only for BFF concerns (real domain logic stays in NestJS).                                                                                                                                                                      |
+| UI kit                    | **Tailwind CSS + shadcn/ui**                                                                                                                        | Fast, accessible, ownable components (not a black-box UI library) — good for a shared `libs/ui`.                                                                                                                                                                                                 |
+| Backend API               | **NestJS**                                                                                                                                          | Modular, DI-based, first-class support for guards/interceptors/pipes — gives you a legitimate reason to talk about layered architecture (controllers → services → repositories) instead of one big Express file.                                                                                 |
+| Workers                   | **NestJS microservice (or standalone Node worker) + BullMQ**                                                                                        | Hosts connectors and the rules engine; consumes queued jobs, isolated from the request/response API process.                                                                                                                                                                                     |
+| Database                  | **PostgreSQL** (Docker) + **Prisma ORM**                                                                                                            | Relational fits the domain (households, users, documents, bills, tasks, events) well; Prisma gives you migrations + type-safe queries.                                                                                                                                                           |
+| Event bus / queue         | **Redis + BullMQ**                                                                                                                                  | Deliberately _not_ Kafka — write the ADR explaining that a single-tenant household system doesn't need partitioned log semantics, and Redis Streams/BullMQ gives you pub/sub + reliable job queues with far less operational weight. This restraint is itself a good architecture talking point. |
+| Auth                      | **Native auth in NestJS** — email/password with argon2id hashing + rotating JWT (access/refresh), plus **Google SSO** via `passport-google-oauth20` | No NextAuth.js — the API is the single authority that issues and validates tokens for web, bot, and any future client, instead of splitting session logic across two frameworks. See §10.                                                                                                        |
+| Notifications             | **WhatsApp Cloud API (Meta), Nodemailer, Web Push (stretch)**                                                                                       | Channel abstraction package — each is a pluggable adapter. WhatsApp Cloud API direct from Meta (not Twilio) gives a free test business number that can message up to 5 verified recipient numbers at no cost — plenty for a household-scale demo. See §18.                                       |
+| Monorepo tooling          | **Nx + pnpm workspaces**                                                                                                                            | Project graph + `nx affected` (only build/test/lint what actually changed), enforced module boundaries via tags (§17.3), built-in generators for scaffolding new libs/connectors (§17.7) — more architecture-discipline mileage than Turborepo for a project meant to showcase system design.    |
+| Containers                | **Docker + Docker Compose** (local), Dockerfile per app                                                                                             | Postgres, Redis, Mailhog (local email capture), Adminer as local infra services.                                                                                                                                                                                                                 |
+| Observability             | **pino (structured logs)** + **OpenTelemetry** (traces across API → queue → worker)                                                                 | Correlate a single event across process boundaries — this is the detail that proves you understand distributed systems, not just CRUD.                                                                                                                                                           |
+| Testing                   | **Vitest/Jest, Supertest, Playwright, Testcontainers**                                                                                              | Unit → integration → e2e pyramid, see §13.                                                                                                                                                                                                                                                       |
+| Git hooks / quality gates | **Husky + lint-staged + commitlint**                                                                                                                | Pre-commit lint/format on staged files, commit-msg enforces Conventional Commits, pre-push runs `nx affected`. See §17.4.                                                                                                                                                                        |
+| CI/CD                     | **GitHub Actions** using `nx affected` + Nx remote caching                                                                                          | Lint → typecheck → test → build → deploy `apps/web` to Vercel and `apps/api` to Render, both free tiers — see §18 for the full $0 deployment topology.                                                                                                                                           |
 
 ---
 
@@ -167,21 +167,30 @@ cairn/
 ```ts
 // libs/domain/src/lib/events.ts
 type BaseEvent = {
-  id: string;              // uuid
+  id: string; // uuid
   householdId: string;
-  occurredAt: string;      // ISO timestamp
+  occurredAt: string; // ISO timestamp
   source: 'gmail' | 'calendar' | 'manual' | 'ocr';
-  dedupeKey: string;       // hash used for idempotency
+  dedupeKey: string; // hash used for idempotency
 };
 
 type BillDetected = BaseEvent & {
   type: 'BillDetected';
-  payload: { vendor: string; amount: number; currency: string; dueDate: string; isRecurring: boolean };
+  payload: {
+    vendor: string;
+    amount: number;
+    currency: string;
+    dueDate: string;
+    isRecurring: boolean;
+  };
 };
 
 type DocumentExpiring = BaseEvent & {
   type: 'DocumentExpiring';
-  payload: { documentType: 'passport' | 'insurance' | 'warranty' | 'registration'; expiresOn: string };
+  payload: {
+    documentType: 'passport' | 'insurance' | 'warranty' | 'registration';
+    expiresOn: string;
+  };
 };
 
 type MaintenanceDue = BaseEvent & {
@@ -194,7 +203,8 @@ type TaskExtracted = BaseEvent & {
   payload: { description: string; assigneeId?: string; dueOn?: string };
 };
 
-export type DomainEvent = BillDetected | DocumentExpiring | MaintenanceDue | TaskExtracted;
+export type DomainEvent =
+  BillDetected | DocumentExpiring | MaintenanceDue | TaskExtracted;
 ```
 
 Core entities in Postgres/Prisma: `Household`, `User` (with `HouseholdMember` join + role), `Document`, `Bill`, `Task`, `Rule`, `EventLog` (append-only record of every domain event, useful for debugging and for an "activity timeline" dashboard feature), `Notification`.
@@ -217,7 +227,7 @@ Every connector implements a common interface (Strategy pattern):
 ```ts
 // libs/domain/src/lib/connector.ts
 export interface Connector {
-  key: string;                         // 'gmail', 'calendar', ...
+  key: string; // 'gmail', 'calendar', ...
   schedule: 'cron' | 'webhook';
   fetch(context: ConnectorContext): Promise<RawSignal[]>;
   normalize(raw: RawSignal): DomainEvent;
@@ -254,20 +264,24 @@ Document the v1 → v2 migration as an ADR — evolving from hardcoded logic to 
 Auth is native — built directly in NestJS (`libs/auth`), with no NextAuth.js in the loop. The reasoning worth stating explicitly (and worth its own ADR, `0004-auth-strategy.md`): `apps/api` is the **single authority** that issues and validates tokens for every client — web, bot, and anything added later — instead of splitting session logic between a Next.js auth layer and a separate API. It's more code to write than dropping in NextAuth, and that's the point: it's the part of the project that actually demonstrates you can build auth, not just configure it.
 
 **Password auth:**
+
 - Signup/login endpoints in `apps/api`, passwords hashed with **argon2id** (not bcrypt — argon2id is the current recommended default and is itself a small, explainable decision).
 - Email verification token flow (stretch) before a password-auth account is fully active.
 
 **Google SSO:**
+
 - OAuth 2.0 Authorization Code flow via `passport-google-oauth20`, implemented as a NestJS Passport strategy inside `libs/auth` — the API owns the entire flow.
 - Web app redirects the browser to `GET /auth/google`; API handles `GET /auth/google/callback`, verifies the Google identity, upserts the `User` (matched by verified email), and issues Cairn's own tokens — Google is only ever used to prove identity, never as the session mechanism itself.
 - First-time Google sign-in with no existing household creates one; an existing email links the Google identity to the existing account rather than creating a duplicate user.
 
 **Tokens & sessions:**
+
 - Short-lived **access token** (JWT, ~15 min) carrying `sub` (user id), `householdId`, and `role`, sent as an `httpOnly`, `secure`, `sameSite=lax` cookie — never exposed to client-side JS.
-- Longer-lived **refresh token**, stored **hashed** in a `RefreshToken` table (`jti`, `userId`, `hashedToken`, `expiresAt`, `revokedAt`) with **rotation on every use** and **reuse detection**: if a refresh token is presented twice, the entire token family is revoked and the user is forced to re-authenticate. This one mechanism is worth more in an interview than naming any auth library — it shows you understand *why* refresh tokens get stolen and replayed, not just that they exist.
+- Longer-lived **refresh token**, stored **hashed** in a `RefreshToken` table (`jti`, `userId`, `hashedToken`, `expiresAt`, `revokedAt`) with **rotation on every use** and **reuse detection**: if a refresh token is presented twice, the entire token family is revoked and the user is forced to re-authenticate. This one mechanism is worth more in an interview than naming any auth library — it shows you understand _why_ refresh tokens get stolen and replayed, not just that they exist.
 - `apps/bot` validates the same access token format via a shared guard from `libs/auth`, so there's exactly one JWT verification implementation in the whole system.
 
 **Household model:**
+
 - `Household` is the top-level tenant boundary; every domain row is scoped by `householdId`.
 - `HouseholdMember` join table carries a `role` (`owner` | `member`) — owners manage rules/connectors, members see the dashboard and get assigned tasks.
 - Invite flow: owner generates an invite link/code → new user signs up (password or Google) → joins household as `member`.
@@ -288,20 +302,20 @@ services:
       POSTGRES_USER: cairn
       POSTGRES_PASSWORD: cairn
       POSTGRES_DB: cairn
-    ports: ["5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    ports: ['5432:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
 
   redis:
     image: redis:7
-    ports: ["6379:6379"]
+    ports: ['6380:6379'] # host 6380 -- avoids clashing with another local project's Redis on 6379
 
-  mailhog:                # local SMTP capture for testing digest emails
+  mailhog: # local SMTP capture for testing digest emails
     image: mailhog/mailhog
-    ports: ["1025:1025", "8025:8025"]
+    ports: ['11025:1025', '18025:8025'] # host 11025/18025 for the same reason
 
-  adminer:                 # quick DB browser
+  adminer: # quick DB browser
     image: adminer
-    ports: ["8080:8080"]
+    ports: ['8080:8080']
 
 volumes:
   pgdata:
@@ -317,7 +331,7 @@ pnpm nx run database:migrate    # Prisma migrate dev, wrapped as an Nx target
 pnpm nx run-many -t serve -p web,api,worker,bot --parallel   # runs all four apps together
 ```
 
-`.env.example` should cover: `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_CALLBACK_URL`, `COOKIE_DOMAIN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN` (a string you choose, used in Meta's webhook handshake), `WHATSAPP_APP_SECRET` (used to verify Meta's `X-Hub-Signature-256` on every inbound webhook — don't skip this check, it's what stops anyone from POSTing fake messages to your endpoint), `SMTP_HOST`/`SMTP_PORT` (Mailhog locally). All of it is validated at boot via the zod schema in `libs/shared/config` (§17.6) — a missing or malformed var fails startup immediately with a clear message instead of surfacing as a mystery 500 later.
+`.env.example` should cover: `DATABASE_URL`, `REDIS_URL` (`redis://localhost:6380` locally — remapped from Redis's default 6379 to avoid clashing with another local project), `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_CALLBACK_URL`, `COOKIE_DOMAIN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN` (a string you choose, used in Meta's webhook handshake), `WHATSAPP_APP_SECRET` (used to verify Meta's `X-Hub-Signature-256` on every inbound webhook — don't skip this check, it's what stops anyone from POSTing fake messages to your endpoint), `SMTP_HOST`/`SMTP_PORT` (Mailhog locally, on host port 11025 for the same reason). All of it is validated at boot via the zod schema in `libs/shared/config` (§17.6) — a missing or malformed var fails startup immediately with a clear message instead of surfacing as a mystery 500 later.
 
 **Testing the WhatsApp webhook locally:** Meta needs a public HTTPS URL to send webhook callbacks to, which `localhost` isn't. Tunnel your local `apps/api` with a free tool — **ngrok** (free tier, random URL that changes per session, fine for dev) or a **Cloudflare Tunnel** (free, stable subdomain if you want one) — and point Meta's App Dashboard webhook config at the tunnel URL while developing.
 
@@ -334,12 +348,12 @@ pnpm nx run-many -t serve -p web,api,worker,bot --parallel   # runs all four app
 
 ## 13. Testing Strategy
 
-| Level | Scope | Tooling |
-|---|---|---|
-| Unit | Rules engine logic, connector `normalize()` functions, dedupe hashing | Vitest/Jest |
-| Contract | Every connector satisfies the `Connector` interface with fixed fixture inputs | Vitest + shared fixtures in `libs/domain` |
-| Integration | API endpoints against a real (containerized) Postgres | Supertest + Testcontainers |
-| E2E | Full pipeline smoke test: seed a fake email → worker processes → digest email captured in Mailhog → dashboard shows the item | Playwright |
+| Level       | Scope                                                                                                                        | Tooling                                   |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Unit        | Rules engine logic, connector `normalize()` functions, dedupe hashing                                                        | Vitest/Jest                               |
+| Contract    | Every connector satisfies the `Connector` interface with fixed fixture inputs                                                | Vitest + shared fixtures in `libs/domain` |
+| Integration | API endpoints against a real (containerized) Postgres                                                                        | Supertest + Testcontainers                |
+| E2E         | Full pipeline smoke test: seed a fake email → worker processes → digest email captured in Mailhog → dashboard shows the item | Playwright                                |
 
 A green CI run that includes a real end-to-end pipeline test (not just UI clicks) is one of the stronger single artifacts you can point to.
 
@@ -384,7 +398,7 @@ Treat each milestone as a sprint with a handful of user stories — this becomes
 
 - **M0 — Scaffold:** Nx + pnpm workspace, empty `apps/*` and `libs/*`, Husky/lint-staged/commitlint/ESLint/Prettier baseline, Docker Compose up, CI pipeline green on an empty build.
 - **M1 — Foundation:** native auth (email/password + argon2id) and Google SSO, refresh-token rotation, household/member model, Prisma schema + migrations, empty dashboard shell with login.
-- **M2 — MVP pipeline:** `domain` event contracts, Gmail connector, rules engine v1 (hardcoded), email digest delivery via Mailhog/SMTP. *This milestone alone is a demoable product.*
+- **M2 — MVP pipeline:** `domain` event contracts, Gmail connector, rules engine v1 (hardcoded), email digest delivery via Mailhog/SMTP. _This milestone alone is a demoable product._
 - **M3 — Channels & inputs:** WhatsApp Cloud API channel (webhook receiver + outbound sender), manual-entry connector + dashboard form, document-expiry tracking.
 - **M4 — Household features:** multi-member households, task delegation/assignment, role-based permissions, observability polish (correlation IDs, health checks, dead-letter surfacing).
 - **M5 — Ship it for $0:** free-tier deployment (§18) — Vercel + Render + Neon + Upstash, live demo URL, WhatsApp webhook pointed at the deployed API.
@@ -394,20 +408,20 @@ Treat each milestone as a sprint with a handful of user stories — this becomes
 
 ## 17. Coding Standards & Repo Hardening
 
-This is the section that makes the repo *read* as maintained by someone with standards, not a solo weekend project — pick what fits your time budget, but §17.1–§17.4 are worth doing in full since they're cheap and visible in every commit.
+This is the section that makes the repo _read_ as maintained by someone with standards, not a solo weekend project — pick what fits your time budget, but §17.1–§17.4 are worth doing in full since they're cheap and visible in every commit.
 
 ### 17.1 Naming Conventions
 
 **Files:**
 
-| Kind | Convention | Example |
-|---|---|---|
-| NestJS artifacts | kebab-case + type suffix (Nest convention) | `bill.controller.ts`, `bill.service.ts`, `bill.module.ts`, `create-bill.dto.ts`, `bill-detected.event.ts`, `google-oauth.strategy.ts`, `jwt-auth.guard.ts` |
-| React components | PascalCase, filename matches export | `HouseholdCard.tsx`, colocated `HouseholdCard.test.tsx` |
-| Hooks | camelCase, `use` prefix | `useHouseholdMembers.ts` |
-| Plain utilities | kebab-case | `format-currency.ts`, `hash-dedupe-key.ts` |
-| Nx libs/apps | kebab-case, matches `project.json` name and import path | `libs/connectors/gmail` → `@cairn/connectors-gmail` |
-| Tests | mirror source filename, `.spec.ts` (unit) or `.e2e-spec.ts` | `bill.service.spec.ts` |
+| Kind             | Convention                                                  | Example                                                                                                                                                    |
+| ---------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NestJS artifacts | kebab-case + type suffix (Nest convention)                  | `bill.controller.ts`, `bill.service.ts`, `bill.module.ts`, `create-bill.dto.ts`, `bill-detected.event.ts`, `google-oauth.strategy.ts`, `jwt-auth.guard.ts` |
+| React components | PascalCase, filename matches export                         | `HouseholdCard.tsx`, colocated `HouseholdCard.test.tsx`                                                                                                    |
+| Hooks            | camelCase, `use` prefix                                     | `useHouseholdMembers.ts`                                                                                                                                   |
+| Plain utilities  | kebab-case                                                  | `format-currency.ts`, `hash-dedupe-key.ts`                                                                                                                 |
+| Nx libs/apps     | kebab-case, matches `project.json` name and import path     | `libs/connectors/gmail` → `@cairn/connectors-gmail`                                                                                                        |
+| Tests            | mirror source filename, `.spec.ts` (unit) or `.e2e-spec.ts` | `bill.service.spec.ts`                                                                                                                                     |
 
 Every lib exposes exactly one `index.ts` barrel as its public API — nothing outside the lib imports its internals directly. This is enforced structurally, not just by convention (§17.3).
 
@@ -561,7 +575,7 @@ A small generator under `tools/generators/connector` means `nx g @cairn/tools:co
 
 ## 18. Running This for ₹0 — Free-Tier Deployment Architecture
 
-Everything below deploys and runs on free tiers with no card charge, verified against each provider's current published terms as of September 2026 (they change — re-check before you commit to one, and cite the docs in your own ADR). The interesting part isn't "which free services did I pick" — it's that the designed architecture in §4–§9 (queue, always-on worker, BullMQ) doesn't map onto free hosting 1:1, and the honest, explainable response is to *right-size the deployment topology to the constraint* rather than pretend a $0 host behaves like a paid one. That's the actual architecture story for this section.
+Everything below deploys and runs on free tiers with no card charge, verified against each provider's current published terms as of September 2026 (they change — re-check before you commit to one, and cite the docs in your own ADR). The interesting part isn't "which free services did I pick" — it's that the designed architecture in §4–§9 (queue, always-on worker, BullMQ) doesn't map onto free hosting 1:1, and the honest, explainable response is to _right-size the deployment topology to the constraint_ rather than pretend a $0 host behaves like a paid one. That's the actual architecture story for this section.
 
 ### 18.1 The constraint, stated plainly
 
@@ -571,15 +585,15 @@ The MVP's own scope makes the fix straightforward: the whole pipeline is a **dai
 
 ### 18.2 Where each piece runs
 
-| Component | Free host | Why this one | Caveat worth knowing (and explaining in an interview) |
-|---|---|---|---|
-| `apps/web` (Next.js dashboard) | **Vercel** (Hobby) | Purpose-built for Next.js; free `*.vercel.app` domain, no card required. | Serverless function duration caps around 60s — irrelevant for dashboard pages, relevant if you ever call something slow from a Route Handler. |
-| Daily trigger | **Vercel Cron** (Hobby) | 100 cron jobs per project, included free. | Hobby caps cron to **once per day**, fired within a ±59 min window — this isn't a limitation you're working around, it's exactly the MVP's digest cadence. Going more frequent later is a Pro-plan upgrade, not a redesign. |
-| `apps/api` (NestJS — auth, CRUD, the pipeline-run endpoint, WhatsApp webhook) | **Render** (Free Web Service) | Runs as a real, persistent Node process rather than being force-fit into a serverless function — sidesteps the Prisma-connection-pool-exhaustion problems serverless + Postgres usually causes. | Free web services **spin down after 15 minutes with no inbound traffic** and take ~1 minute to wake on the next request. The daily cron ping doubles as the wake-up call (§18.4). Render's *free Postgres* also auto-expires after 30 days — don't use it; use Neon instead (next row). |
-| Database | **Neon** (Free) | Genuinely permanent free tier, no card, no expiry — unlike Render's free Postgres. | 0.5 GB storage, 100 compute-hours/month, autosuspends after 5 min idle and wakes in about a second on the next query. Comfortably enough for a demo household's data. |
-| Redis (dedupe cache, light job metadata) | **Upstash** (Free) | Permanent free tier, no card, serverless-friendly (REST/HTTP-based client, so it works fine from short-lived function calls). | 500K commands/month, 256 MB storage. Fine for dedupe-key lookups and caching; not sized for a real high-throughput BullMQ consumer — which is consistent with §18.1, since nothing's running one in this topology anyway. |
-| Messaging channel | **WhatsApp Cloud API** (Meta, test tier) | Creating a Meta app + adding the WhatsApp product auto-provisions a free test WhatsApp Business Account and test phone number that can message **up to 5 verified recipient numbers at no cost** — no card, no per-message charge. | Beyond those 5 recipients, or moving to a real business-verified number, is where Meta's per-conversation pricing starts. Out of scope for a personal/portfolio deployment where you and household members *are* the 5 recipients. |
-| CI | **GitHub Actions** | Unlimited minutes on a **public** repository. | Keep the repo public — which you want for a resume project anyway, and it removes any CI-minutes ceiling entirely. |
+| Component                                                                     | Free host                                | Why this one                                                                                                                                                                                                                       | Caveat worth knowing (and explaining in an interview)                                                                                                                                                                                                                                   |
+| ----------------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web` (Next.js dashboard)                                                | **Vercel** (Hobby)                       | Purpose-built for Next.js; free `*.vercel.app` domain, no card required.                                                                                                                                                           | Serverless function duration caps around 60s — irrelevant for dashboard pages, relevant if you ever call something slow from a Route Handler.                                                                                                                                           |
+| Daily trigger                                                                 | **Vercel Cron** (Hobby)                  | 100 cron jobs per project, included free.                                                                                                                                                                                          | Hobby caps cron to **once per day**, fired within a ±59 min window — this isn't a limitation you're working around, it's exactly the MVP's digest cadence. Going more frequent later is a Pro-plan upgrade, not a redesign.                                                             |
+| `apps/api` (NestJS — auth, CRUD, the pipeline-run endpoint, WhatsApp webhook) | **Render** (Free Web Service)            | Runs as a real, persistent Node process rather than being force-fit into a serverless function — sidesteps the Prisma-connection-pool-exhaustion problems serverless + Postgres usually causes.                                    | Free web services **spin down after 15 minutes with no inbound traffic** and take ~1 minute to wake on the next request. The daily cron ping doubles as the wake-up call (§18.4). Render's _free Postgres_ also auto-expires after 30 days — don't use it; use Neon instead (next row). |
+| Database                                                                      | **Neon** (Free)                          | Genuinely permanent free tier, no card, no expiry — unlike Render's free Postgres.                                                                                                                                                 | 0.5 GB storage, 100 compute-hours/month, autosuspends after 5 min idle and wakes in about a second on the next query. Comfortably enough for a demo household's data.                                                                                                                   |
+| Redis (dedupe cache, light job metadata)                                      | **Upstash** (Free)                       | Permanent free tier, no card, serverless-friendly (REST/HTTP-based client, so it works fine from short-lived function calls).                                                                                                      | 500K commands/month, 256 MB storage. Fine for dedupe-key lookups and caching; not sized for a real high-throughput BullMQ consumer — which is consistent with §18.1, since nothing's running one in this topology anyway.                                                               |
+| Messaging channel                                                             | **WhatsApp Cloud API** (Meta, test tier) | Creating a Meta app + adding the WhatsApp product auto-provisions a free test WhatsApp Business Account and test phone number that can message **up to 5 verified recipient numbers at no cost** — no card, no per-message charge. | Beyond those 5 recipients, or moving to a real business-verified number, is where Meta's per-conversation pricing starts. Out of scope for a personal/portfolio deployment where you and household members _are_ the 5 recipients.                                                      |
+| CI                                                                            | **GitHub Actions**                       | Unlimited minutes on a **public** repository.                                                                                                                                                                                      | Keep the repo public — which you want for a resume project anyway, and it removes any CI-minutes ceiling entirely.                                                                                                                                                                      |
 
 Local development is unaffected by any of this — Docker Compose (§11) still gives you the full designed stack (real Postgres, real Redis, a real always-on worker if you run it) so you can build and demo the "proper" architecture on your own machine, and the free deployment is a documented, deliberate subset of it for the public demo link.
 
@@ -594,9 +608,9 @@ export class PipelineController {
   constructor(private readonly pipeline: PipelineService) {}
 
   @Post('run')
-  @UseGuards(CronSecretGuard)   // checks a shared secret header, not a user JWT
+  @UseGuards(CronSecretGuard) // checks a shared secret header, not a user JWT
   async run() {
-    return this.pipeline.runOnce();   // same function libs/rules-engine + libs/connectors power in the worker design
+    return this.pipeline.runOnce(); // same function libs/rules-engine + libs/connectors power in the worker design
   }
 }
 ```
@@ -633,8 +647,17 @@ export class WhatsAppWebhookController {
 
   // 2. Every inbound message/status callback afterward
   @Post()
-  async receive(@Req() req: RawBodyRequest<Request>, @Headers('x-hub-signature-256') signature: string) {
-    if (!verifyMetaSignature(req.rawBody, signature, this.config.whatsappAppSecret)) {
+  async receive(
+    @Req() req: RawBodyRequest<Request>,
+    @Headers('x-hub-signature-256') signature: string,
+  ) {
+    if (
+      !verifyMetaSignature(
+        req.rawBody,
+        signature,
+        this.config.whatsappAppSecret,
+      )
+    ) {
       throw new ForbiddenException('Invalid webhook signature');
     }
     // ...translate into a domain command via libs/connectors/manual-entry
