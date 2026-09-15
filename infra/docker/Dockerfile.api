@@ -1,16 +1,20 @@
 # syntax=docker/dockerfile:1
 FROM node:24-alpine AS build
 WORKDIR /workspace
+ENV HUSKY=0
 RUN corepack enable
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm exec nx build api
 
+# apps/api's webpack config doesn't emit a prod package.json (generatePackageJson: false), so
+# there's nothing for a separate `pnpm install --prod` to act on in this stage -- copy the
+# build stage's already-installed node_modules straight through instead.
 FROM node:24-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S cairn && adduser -S cairn -G cairn
 COPY --from=build /workspace/dist/apps/api ./
-RUN corepack enable && pnpm install --prod --frozen-lockfile || true
+COPY --from=build /workspace/node_modules ./node_modules
 USER cairn
 EXPOSE 3000
 CMD ["node", "main.js"]

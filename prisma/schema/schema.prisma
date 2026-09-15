@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled (PgBouncer on Neon) -- what the running app connects with
+  directUrl = env("DIRECT_DATABASE_URL") // unpooled -- what `prisma migrate` needs; locally, same as DATABASE_URL
 }
 
 generator client {

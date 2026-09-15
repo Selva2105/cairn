@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM node:24-alpine AS build
 WORKDIR /workspace
+ENV HUSKY=0
 RUN corepack enable
 COPY . .
 RUN pnpm install --frozen-lockfile
@@ -10,6 +11,6 @@ FROM node:24-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S cairn && adduser -S cairn -G cairn
 COPY --from=build /workspace/dist/apps/worker ./
-RUN corepack enable && pnpm install --prod --frozen-lockfile || true
+COPY --from=build /workspace/node_modules ./node_modules
 USER cairn
 CMD ["node", "main.js"]
