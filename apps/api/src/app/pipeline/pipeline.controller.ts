@@ -1,9 +1,9 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { PipelineService } from '@cairn/pipeline';
 import { API_ROUTES } from '@cairn/shared-constants';
 import { IsOptional, IsString } from 'class-validator';
 
 import { CronSecretGuard } from './cron-secret.guard';
-import { PipelineService } from './pipeline.service';
 
 class RunPipelineDto {
   @IsOptional()

@@ -22,10 +22,7 @@
       "path": "../../libs/shared/config/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/rules-engine/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/notifications/tsconfig.lib.json"
+      "path": "../../libs/pipeline/tsconfig.lib.json"
     },
     {
       "path": "../../libs/domain/tsconfig.lib.json"

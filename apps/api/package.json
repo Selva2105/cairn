@@ -89,8 +89,7 @@
     "@cairn/auth": "workspace:*",
     "@cairn/database": "workspace:*",
     "@cairn/domain": "workspace:*",
-    "@cairn/notifications": "workspace:*",
-    "@cairn/rules-engine": "workspace:*",
+    "@cairn/pipeline": "workspace:*",
     "@cairn/shared-config": "workspace:*",
     "@cairn/shared-constants": "workspace:*",
     "@cairn/shared-utils": "workspace:*"

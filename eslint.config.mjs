@@ -38,6 +38,14 @@ export default [
               sourceTag: 'type:feature',
               onlyDependOnLibsWithTags: ['type:domain', 'type:util'],
             },
+            // orchestrator libs (e.g. libs/pipeline) are the deliberate exception to the
+            // feature-to-feature rule above: their whole job is composing multiple feature
+            // libs (and persistence) into one infra-agnostic service shared by apps/api and
+            // apps/worker. See CAIRN_WORKER_ENGINEERING.md §1.
+            {
+              sourceTag: 'type:orchestrator',
+              onlyDependOnLibsWithTags: ['type:domain', 'type:util', 'type:feature', 'type:data'],
+            },
             // shared data/ui libs may use domain + util
             {
               sourceTag: 'type:data',
