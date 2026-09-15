@@ -85,6 +85,7 @@
     "tslib": "^2.3.0",
     "cookie-parser": "^1.4.7",
     "ioredis": "^6.0.0",
+    "multer": "^2.0.0",
     "class-validator": "^0.15.0",
     "class-transformer": "^0.5.1",
     "@cairn/auth": "workspace:*",
@@ -93,6 +94,7 @@
     "@cairn/pipeline": "workspace:*",
     "@cairn/notifications": "workspace:*",
     "@cairn/connectors-manual-entry": "workspace:*",
+    "@cairn/connectors-ocr": "workspace:*",
     "@cairn/shared-config": "workspace:*",
     "@cairn/shared-constants": "workspace:*",
     "@cairn/shared-utils": "workspace:*"
