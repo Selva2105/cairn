@@ -1,0 +1,33 @@
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String? // null for Google-only accounts
+  googleId        String?   @unique
+  name            String
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  memberships   HouseholdMember[]
+  refreshTokens RefreshToken[]
+  assignedTasks Task[]            @relation("TaskAssignee")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String
+  jti         String    @unique
+  hashedToken String
+  familyId    String // rotation family -- reuse of any token in the family revokes the whole family
+  revokedAt   DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}

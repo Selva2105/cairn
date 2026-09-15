@@ -16,7 +16,7 @@
   "dependencies": {},
   "nx": {
     "tags": [
-      "scope:worker",
+      "scope:shared",
       "type:feature"
     ]
   }

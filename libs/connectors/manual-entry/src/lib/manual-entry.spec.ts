@@ -1,4 +1,4 @@
-import { manualEntry } from './manual-entry.js';
+import { manualEntry } from './manual-entry';
 
 describe('manualEntry', () => {
   it('should work', () => {

@@ -1,1 +1,1 @@
-export * from './lib/calendar.js';
+export * from './lib/calendar';

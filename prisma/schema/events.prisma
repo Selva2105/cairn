@@ -1,0 +1,24 @@
+enum DomainEventType {
+  BILL_DETECTED
+  DOCUMENT_EXPIRING
+  MAINTENANCE_DUE
+  TASK_EXTRACTED
+}
+
+model EventLog {
+  id          String          @id @default(uuid())
+  householdId String
+  type        DomainEventType
+  source      ConnectorKey
+  payload     Json
+  dedupeKey   String          @unique // the idempotency guarantee from §8 of the architecture guide lives here
+  occurredAt  DateTime
+  processedAt DateTime?
+  createdAt   DateTime        @default(now())
+
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@index([householdId, type])
+  @@map("event_log")
+}

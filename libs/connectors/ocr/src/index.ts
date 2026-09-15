@@ -1,1 +1,1 @@
-export * from './lib/ocr.js';
+export * from './lib/ocr';

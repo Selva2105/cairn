@@ -13,7 +13,11 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^4.0.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^12.0.0"
+  },
   "nx": {
     "tags": [
       "scope:shared",

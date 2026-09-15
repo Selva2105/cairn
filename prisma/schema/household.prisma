@@ -1,0 +1,36 @@
+enum HouseholdRole {
+  OWNER
+  MEMBER
+}
+
+model Household {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members       HouseholdMember[]
+  connectors    ConnectorConfig[]
+  events        EventLog[]
+  rules         Rule[]
+  documents     Document[]
+  bills         Bill[]
+  tasks         Task[]
+  notifications Notification[]
+
+  @@map("households")
+}
+
+model HouseholdMember {
+  id          String        @id @default(uuid())
+  householdId String
+  userId      String
+  role        HouseholdRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@map("household_members")
+}

@@ -1,1 +1,1 @@
-export * from './lib/manual-entry.js';
+export * from './lib/manual-entry';

@@ -12,6 +12,13 @@
   "dependencies": {
     "next": "~16.1.6",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@cairn/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17",
+    "tailwindcss-animate": "^1.0.7",
+    "postcss": "^8.5.13",
+    "autoprefixer": "10.4.20"
   }
 }

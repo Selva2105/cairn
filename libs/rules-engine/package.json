@@ -13,10 +13,15 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@cairn/domain": "workspace:*",
+    "@cairn/shared-constants": "workspace:*",
+    "@cairn/shared-utils": "workspace:*"
+  },
   "nx": {
     "tags": [
-      "scope:worker",
+      "scope:shared",
       "type:feature"
     ]
   }

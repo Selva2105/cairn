@@ -1,0 +1,5 @@
+export function formatCurrency(amount: number, currency: string): string {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(
+    amount,
+  );
+}

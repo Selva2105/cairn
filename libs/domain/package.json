@@ -13,7 +13,10 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^4.0.0",
+    "@cairn/shared-constants": "workspace:*"
+  },
   "nx": {
     "tags": [
       "scope:shared",

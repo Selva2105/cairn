@@ -1,0 +1,14 @@
+model Rule {
+  id          String          @id @default(uuid())
+  householdId String
+  name        String
+  eventType   DomainEventType
+  definition  Json // unused in v1 (hardcoded rules); v2 declarative rule body, see §9 of the architecture guide
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@map("rules")
+}

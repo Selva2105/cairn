@@ -1,0 +1,23 @@
+enum ConnectorKey {
+  GMAIL
+  CALENDAR
+  MANUAL
+  OCR
+  WHATSAPP
+}
+
+model ConnectorConfig {
+  id          String       @id @default(uuid())
+  householdId String
+  key         ConnectorKey
+  enabled     Boolean      @default(true)
+  credentials Json? // encrypted at the application layer before it ever reaches Prisma -- never store plaintext OAuth tokens
+  lastRunAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, key])
+  @@map("connector_configs")
+}

@@ -1,0 +1,29 @@
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+  PUSH
+  DASHBOARD
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Notification {
+  id          String              @id @default(uuid())
+  householdId String
+  eventId     String?
+  channel     NotificationChannel
+  status      NotificationStatus  @default(PENDING)
+  payload     Json
+  sentAt      DateTime?
+  failReason  String?
+  createdAt   DateTime            @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  event     EventLog? @relation(fields: [eventId], references: [id])
+
+  @@map("notifications")
+}

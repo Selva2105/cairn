@@ -1,4 +1,4 @@
-import { calendar } from './calendar.js';
+import { calendar } from './calendar';
 
 describe('calendar', () => {
   it('should work', () => {

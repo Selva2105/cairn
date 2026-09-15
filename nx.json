@@ -70,6 +70,9 @@
     }
   ],
   "analytics": false,
+  "sync": {
+    "applyChanges": true
+  },
   "targetDefaults": {
     "test": {
       "dependsOn": ["^build"]

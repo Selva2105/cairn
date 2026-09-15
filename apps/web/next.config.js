@@ -2,8 +2,9 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Next.js options go here
-  // See: https://nextjs.org/docs/app/api-reference/config/next-config-js
+  // Nx libs are linked as raw TS source (package.json "exports" pointing at src/index.ts,
+  // not a prebuilt dist) -- Next only runs its own transform over transpilePackages entries.
+  transpilePackages: ['@cairn/ui'],
 };
 
 module.exports = nextConfig;

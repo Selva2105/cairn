@@ -1,1 +1,3 @@
-export * from './lib/utils.js';
+export * from './lib/dedupe-key';
+export * from './lib/format-currency';
+export * from './lib/date-math';

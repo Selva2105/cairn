@@ -1,4 +1,4 @@
-import { ocr } from './ocr.js';
+import { ocr } from './ocr';
 
 describe('ocr', () => {
   it('should work', () => {

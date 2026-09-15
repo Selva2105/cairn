@@ -1,10 +1,24 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { PrismaModule } from '@cairn/database';
+import { AppConfigModule } from '@cairn/shared-config';
+
+import { AuthModule } from './auth/auth.module';
+import { EventsModule } from './events/events.module';
+import { HealthModule } from './health/health.module';
+import { HouseholdModule } from './household/household.module';
+import { PipelineModule } from './pipeline/pipeline.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    AppConfigModule,
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    HouseholdModule,
+    EventsModule,
+    PipelineModule,
+    HealthModule,
+  ],
 })
 export class AppModule {}

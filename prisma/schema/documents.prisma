@@ -1,0 +1,23 @@
+enum DocumentType {
+  PASSPORT
+  INSURANCE
+  WARRANTY
+  REGISTRATION
+  OTHER
+}
+
+model Document {
+  id          String       @id @default(uuid())
+  householdId String
+  type        DocumentType
+  label       String
+  expiresOn   DateTime
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, expiresOn])
+  @@map("documents")
+}

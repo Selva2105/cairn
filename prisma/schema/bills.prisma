@@ -1,0 +1,16 @@
+model Bill {
+  id          String   @id @default(uuid())
+  householdId String
+  vendor      String
+  amount      Decimal  @db.Decimal(10, 2)
+  currency    String   @default("INR")
+  dueDate     DateTime
+  isRecurring Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, dueDate])
+  @@map("bills")
+}
