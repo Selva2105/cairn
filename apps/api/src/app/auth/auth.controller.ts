@@ -10,8 +10,11 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { GoogleAuthGuard } from '@cairn/auth';
+import type { AccessTokenPayload } from '@cairn/auth';
+import { GoogleAuthGuard, JwtAuthGuard } from '@cairn/auth';
 import type { GoogleProfile } from '@cairn/auth';
+
+import { CurrentUser } from '../common/current-user.decorator';
 import { AppConfigService } from '@cairn/shared-config';
 import { API_ROUTES, COOKIES } from '@cairn/shared-constants';
 import type { Request, Response } from 'express';
@@ -95,6 +98,16 @@ export class AuthController {
     const tokens = await this.authService.loginWithGoogle(profile);
     this.setAuthCookies(res, tokens);
     return { status: 'ok' };
+  }
+
+  @Get(API_ROUTES.AUTH.SESSION)
+  @UseGuards(JwtAuthGuard)
+  session(@CurrentUser() user: AccessTokenPayload): {
+    userId: string;
+    householdId: string;
+    role: string;
+  } {
+    return { userId: user.sub, householdId: user.householdId, role: user.role };
   }
 
   private setAuthCookies(res: Response, tokens: AuthTokens): void {

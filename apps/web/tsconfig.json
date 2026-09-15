@@ -67,6 +67,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared/constants"
+    },
+    {
       "path": "../../libs/ui"
     }
   ]

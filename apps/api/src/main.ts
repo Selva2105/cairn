@@ -9,6 +9,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.enableCors({
+    origin: process.env.WEB_APP_ORIGIN ?? 'http://localhost:4200',
+    credentials: true,
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

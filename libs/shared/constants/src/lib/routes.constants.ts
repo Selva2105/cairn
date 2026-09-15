@@ -6,6 +6,7 @@ export const API_ROUTES = {
     LOGOUT: '/auth/logout',
     GOOGLE: '/auth/google',
     GOOGLE_CALLBACK: '/auth/google/callback',
+    SESSION: '/auth/session',
   },
   HOUSEHOLDS: {
     BASE: '/households',

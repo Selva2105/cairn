@@ -1,8 +1,15 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-test('has title', async ({ page }) => {
+test('redirects an unauthenticated visitor to login', async ({ page }) => {
   await page.goto('/');
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible();
+});
 
-  // Expect h1 to contain a substring.
-  expect(await page.locator('h1').innerText()).toContain('Welcome');
+test('signup form validates before submitting', async ({ page }) => {
+  await page.goto('/signup');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(
+    page.getByText('Name is required', { exact: true }),
+  ).toBeVisible();
 });
