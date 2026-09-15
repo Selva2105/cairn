@@ -18,6 +18,9 @@
     "@cairn/domain": "workspace:*",
     "@cairn/shared-utils": "workspace:*"
   },
+  "devDependencies": {
+    "@cairn/shared-constants": "workspace:*"
+  },
   "nx": {
     "tags": [
       "scope:shared",

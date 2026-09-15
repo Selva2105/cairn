@@ -1,0 +1,19 @@
+{
+  "externalId": "18c9a1f2b3d4e5f6",
+  "raw": {
+    "id": "18c9a1f2b3d4e5f6",
+    "snippet": "Your electricity bill of Rs 1250 is due date: 25 Oct 2026.",
+    "payload": {
+      "headers": [
+        {
+          "name": "From",
+          "value": "Acme Electricity <billing@acme-electricity.com>"
+        },
+        { "name": "Subject", "value": "Your October Electricity Bill" }
+      ],
+      "body": {
+        "data": "WW91ciBlbGVjdHJpY2l0eSBiaWxsIG9mIFJzIDEyNTAgaXMgZHVlIGRhdGU6IDI1IE9jdCAyMDI2LiBUaGFuayB5b3UgZm9yIGJlaW5nIGEgc3Vic2NyaWJlci4="
+      }
+    }
+  }
+}

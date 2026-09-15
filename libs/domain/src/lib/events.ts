@@ -8,6 +8,10 @@ const baseEventSchema = z.object({
   occurredAt: z.string().datetime(),
   source: z.enum(['gmail', 'calendar', 'manual', 'ocr']),
   dedupeKey: z.string().min(1),
+  // Fuzzy connectors (Gmail/Calendar heuristic parsing, OCR) attach this; the rules engine
+  // routes 'low' to a review-queue notification instead of an authoritative digest entry.
+  // See CAIRN_CONNECTORS_ENGINEERING.md §5.
+  confidence: z.enum(['high', 'low']).optional(),
 });
 
 export const billDetectedSchema = baseEventSchema.extend({

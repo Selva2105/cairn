@@ -16,7 +16,7 @@ interface GmailCredentials {
 }
 
 export class GmailConnector implements Connector {
-  readonly key = 'gmail';
+  readonly key = 'GMAIL' as const;
   readonly schedule = 'cron' as const;
 
   async fetch(context: ConnectorContext): Promise<RawSignal[]> {
@@ -66,6 +66,8 @@ export class GmailConnector implements Connector {
       );
     }
 
+    const { confidence, ...payload } = parsed;
+
     return {
       id: randomUUID(),
       // The connector doesn't know which household it's running for -- the caller
@@ -73,9 +75,10 @@ export class GmailConnector implements Connector {
       householdId: '',
       occurredAt: new Date().toISOString(),
       source: 'gmail',
-      dedupeKey: hashDedupeKey('gmail', raw.externalId),
+      dedupeKey: hashDedupeKey([this.key, raw.externalId]),
       type: 'BillDetected',
-      payload: parsed,
+      confidence,
+      payload,
     };
   }
 }

@@ -476,6 +476,10 @@ importers:
       googleapis:
         specifier: ^181.0.0
         version: 181.0.0
+    devDependencies:
+      '@cairn/shared-constants':
+        specifier: workspace:*
+        version: link:../../shared/constants
 
   libs/connectors/manual-entry: {}
 

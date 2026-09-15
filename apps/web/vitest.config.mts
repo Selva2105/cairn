@@ -14,6 +14,7 @@ export default defineConfig(() => ({
   test: {
     name: 'web',
     watch: false,
+    passWithNoTests: true,
     globals: true,
     environment: 'jsdom',
     include: [

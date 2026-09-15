@@ -23,7 +23,11 @@ export class EventsService {
     householdId: string,
     dto: CreateManualEventDto,
   ): Promise<EventLog> {
-    const dedupeKey = hashDedupeKey('manual', dto.externalId ?? randomUUID());
+    const dedupeKey = hashDedupeKey([
+      'MANUAL',
+      householdId,
+      dto.externalId ?? randomUUID(),
+    ]);
     const existing = await this.prisma.eventLog.findUnique({
       where: { dedupeKey },
     });

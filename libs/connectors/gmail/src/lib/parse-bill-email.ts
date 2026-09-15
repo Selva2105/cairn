@@ -4,6 +4,10 @@ export interface ParsedBillEmail {
   currency: string;
   dueDate: string; // ISO
   isRecurring: boolean;
+  // 'low' when the vendor name fell back to the raw From header (no "Name <email>" structure
+  // to extract from) -- the rules engine routes 'low' to a review-queue notification instead
+  // of an authoritative digest entry. See CAIRN_CONNECTORS_ENGINEERING.md §5.
+  confidence: 'high' | 'low';
 }
 
 const AMOUNT_PATTERN = /(?:INR|Rs\.?|₹|\$|USD)\s?([\d,]+(?:\.\d{1,2})?)/i;
@@ -40,16 +44,24 @@ export function parseBillEmail(params: {
     return null;
   }
 
+  const vendor = extractVendorName(params.from);
+
   return {
-    vendor: extractVendorName(params.from),
+    vendor: vendor.name,
     amount,
     currency: /\$|USD/i.test(amountMatch[0]) ? 'USD' : 'INR',
     dueDate: dueDate.toISOString(),
     isRecurring: RECURRING_PATTERN.test(`${params.subject} ${params.body}`),
+    confidence: vendor.wasStructured ? 'high' : 'low',
   };
 }
 
-function extractVendorName(from: string): string {
+function extractVendorName(from: string): {
+  name: string;
+  wasStructured: boolean;
+} {
   const match = from.match(/^"?([^"<]+)"?\s*</);
-  return (match?.[1] ?? from).trim();
+  return match?.[1]
+    ? { name: match[1].trim(), wasStructured: true }
+    : { name: from.trim(), wasStructured: false };
 }
