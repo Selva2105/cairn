@@ -3,6 +3,7 @@ model User {
   email           String    @unique
   passwordHash    String? // null for Google-only accounts
   googleId        String?   @unique
+  phone           String?   @unique // E.164 format -- links an inbound WhatsApp sender to a user
   name            String
   emailVerifiedAt DateTime?
   createdAt       DateTime  @default(now())

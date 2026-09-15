@@ -3,11 +3,13 @@ import { PrismaModule } from '@cairn/database';
 import { AppConfigModule } from '@cairn/shared-config';
 
 import { AuthModule } from './auth/auth.module';
+import { DocumentsModule } from './documents/documents.module';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import { HouseholdModule } from './household/household.module';
 import { PipelineModule } from './pipeline/pipeline.module';
 import { UsersModule } from './users/users.module';
+import { WhatsAppModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     HouseholdModule,
     EventsModule,
+    DocumentsModule,
+    WhatsAppModule,
     PipelineModule,
     HealthModule,
   ],

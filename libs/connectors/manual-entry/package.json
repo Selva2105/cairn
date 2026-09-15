@@ -13,7 +13,11 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@cairn/domain": "workspace:*",
+    "@cairn/shared-utils": "workspace:*",
+    "@cairn/shared-constants": "workspace:*"
+  },
   "nx": {
     "tags": [
       "scope:shared",

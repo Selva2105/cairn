@@ -22,6 +22,12 @@
       "path": "../../libs/shared/config/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/connectors/manual-entry/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/notifications/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/pipeline/tsconfig.lib.json"
     },
     {

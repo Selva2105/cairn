@@ -28,7 +28,13 @@ export const billDetectedSchema = baseEventSchema.extend({
 export const documentExpiringSchema = baseEventSchema.extend({
   type: z.literal(EVENT_TYPES.DOCUMENT_EXPIRING),
   payload: z.object({
-    documentType: z.enum(['passport', 'insurance', 'warranty', 'registration']),
+    documentType: z.enum([
+      'passport',
+      'insurance',
+      'warranty',
+      'registration',
+      'other',
+    ]),
     expiresOn: z.string().datetime(),
   }),
 });

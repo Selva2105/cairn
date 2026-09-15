@@ -6,6 +6,7 @@ import { NotificationDispatchService } from '@cairn/notifications';
 import { RulesEngineService } from '@cairn/rules-engine';
 
 import { ConnectorRegistryService } from './connector-registry.service';
+import { DocumentExpiryScannerService } from './document-expiry-scanner.service';
 import {
   PipelineEventsService,
   type PendingEvent,
@@ -15,6 +16,7 @@ export interface PipelineRunSummary {
   ingested: number;
   skipped: number;
   failedConnectors: number;
+  documentsScanned: number;
   processed: number;
   notified: number;
 }
@@ -33,17 +35,29 @@ export class PipelineService {
     private readonly rules: RulesEngineService,
     private readonly notifications: NotificationDispatchService,
     private readonly events: PipelineEventsService,
+    private readonly documentExpiryScanner: DocumentExpiryScannerService,
   ) {}
+
+  /**
+   * Persists a single event sourced outside the polling loop above -- a dashboard form
+   * submission or a parsed WhatsApp command. Returns false if it's a dedupe hit.
+   */
+  recordManualEvent(householdId: string, event: DomainEvent): Promise<boolean> {
+    return this.events.persistIfNew(householdId, event);
+  }
 
   async runOnce(householdId?: string): Promise<PipelineRunSummary> {
     const summary: PipelineRunSummary = {
       ingested: 0,
       skipped: 0,
       failedConnectors: 0,
+      documentsScanned: 0,
       processed: 0,
       notified: 0,
     };
 
+    summary.documentsScanned =
+      await this.documentExpiryScanner.scan(householdId);
     await this.ingestFromConnectors(householdId, summary);
     await this.evaluateAndNotifyPending(householdId, summary);
 
@@ -103,12 +117,36 @@ export class PipelineService {
           continue;
         }
         for (const member of row.household.members) {
-          await this.notifications.dispatch(NOTIFICATION_CHANNELS.EMAIL, {
+          const payload = {
             to: member.user.email,
             subject: `Cairn: ${row.type.replace(/_/g, ' ').toLowerCase()}`,
             body: `<p>${JSON.stringify(row.payload)}</p>`,
-          });
-          summary.notified++;
+          };
+          try {
+            await this.notifications.dispatch(
+              NOTIFICATION_CHANNELS.EMAIL,
+              payload,
+            );
+            await this.events.recordNotificationSent(
+              row.householdId,
+              row.id,
+              'EMAIL',
+              payload,
+            );
+            summary.notified++;
+          } catch (error) {
+            this.logger.error(
+              `Failed to send EMAIL notification for event ${row.id}`,
+              error as Error,
+            );
+            await this.events.recordNotificationFailed(
+              row.householdId,
+              row.id,
+              'EMAIL',
+              payload,
+              (error as Error).message,
+            );
+          }
         }
       }
 

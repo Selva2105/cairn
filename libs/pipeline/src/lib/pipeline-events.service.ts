@@ -79,4 +79,41 @@ export class PipelineEventsService {
       data: { processedAt: new Date() },
     });
   }
+
+  recordNotificationSent(
+    householdId: string,
+    eventId: string,
+    channel: 'EMAIL' | 'WHATSAPP',
+    payload: object,
+  ): Promise<unknown> {
+    return this.prisma.notification.create({
+      data: {
+        householdId,
+        eventId,
+        channel,
+        status: 'SENT',
+        payload: payload as Prisma.InputJsonValue,
+        sentAt: new Date(),
+      },
+    });
+  }
+
+  recordNotificationFailed(
+    householdId: string,
+    eventId: string,
+    channel: 'EMAIL' | 'WHATSAPP',
+    payload: object,
+    failReason: string,
+  ): Promise<unknown> {
+    return this.prisma.notification.create({
+      data: {
+        householdId,
+        eventId,
+        channel,
+        status: 'FAILED',
+        payload: payload as Prisma.InputJsonValue,
+        failReason,
+      },
+    });
+  }
 }

@@ -6,14 +6,16 @@ import type {
   NotificationChannel,
   NotificationPayload,
 } from './notification-channel.interface';
+import { WhatsAppChannel } from './whatsapp.channel';
 
 @Injectable()
 export class NotificationDispatchService {
   private readonly channels: Record<string, NotificationChannel>;
 
-  constructor(emailChannel: EmailChannel) {
+  constructor(emailChannel: EmailChannel, whatsAppChannel: WhatsAppChannel) {
     this.channels = {
       [NOTIFICATION_CHANNELS.EMAIL]: emailChannel,
+      [NOTIFICATION_CHANNELS.WHATSAPP]: whatsAppChannel,
     };
   }
 

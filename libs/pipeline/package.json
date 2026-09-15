@@ -18,6 +18,7 @@
     "@cairn/domain": "workspace:*",
     "@cairn/database": "workspace:*",
     "@cairn/shared-constants": "workspace:*",
+    "@cairn/shared-utils": "workspace:*",
     "@cairn/rules-engine": "workspace:*",
     "@cairn/notifications": "workspace:*",
     "@cairn/connectors-gmail": "workspace:*"

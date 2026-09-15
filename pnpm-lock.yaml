@@ -306,12 +306,18 @@ importers:
       '@cairn/auth':
         specifier: workspace:*
         version: link:../../libs/auth
+      '@cairn/connectors-manual-entry':
+        specifier: workspace:*
+        version: link:../../libs/connectors/manual-entry
       '@cairn/database':
         specifier: workspace:*
         version: link:../../libs/database
       '@cairn/domain':
         specifier: workspace:*
         version: link:../../libs/domain
+      '@cairn/notifications':
+        specifier: workspace:*
+        version: link:../../libs/notifications
       '@cairn/pipeline':
         specifier: workspace:*
         version: link:../../libs/pipeline
@@ -505,7 +511,17 @@ importers:
         specifier: workspace:*
         version: link:../../shared/constants
 
-  libs/connectors/manual-entry: {}
+  libs/connectors/manual-entry:
+    dependencies:
+      '@cairn/domain':
+        specifier: workspace:*
+        version: link:../../domain
+      '@cairn/shared-constants':
+        specifier: workspace:*
+        version: link:../../shared/constants
+      '@cairn/shared-utils':
+        specifier: workspace:*
+        version: link:../../shared/utils
 
   libs/connectors/ocr: {}
 
@@ -562,6 +578,9 @@ importers:
       '@cairn/shared-constants':
         specifier: workspace:*
         version: link:../shared/constants
+      '@cairn/shared-utils':
+        specifier: workspace:*
+        version: link:../shared/utils
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.1)
