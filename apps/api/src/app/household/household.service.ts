@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { TokenService } from '@cairn/auth';
 import { Prisma, PrismaService, type HouseholdMember } from '@cairn/database';
 
@@ -41,6 +45,22 @@ export class HouseholdService {
     });
     if (!membership) {
       throw new NotFoundException('Household not found');
+    }
+    return membership;
+  }
+
+  /**
+   * Checked against the membership row for *this* householdId, not the JWT's `role` claim --
+   * that's only scoped to whichever household was active at login/refresh and can't be
+   * trusted for a different household a route references.
+   */
+  async requireOwnerMembership(
+    userId: string,
+    householdId: string,
+  ): Promise<HouseholdMember> {
+    const membership = await this.requireMembership(userId, householdId);
+    if (membership.role !== 'OWNER') {
+      throw new ForbiddenException('Only the household owner can do this');
     }
     return membership;
   }

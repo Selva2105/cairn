@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import type { AccessTokenPayload } from '@cairn/auth';
 import { JwtAuthGuard } from '@cairn/auth';
 import type { HouseholdMember } from '@cairn/database';
@@ -38,15 +30,7 @@ export class HouseholdController {
     @Param('id') id: string,
     @CurrentUser() user: AccessTokenPayload,
   ): Promise<{ inviteToken: string }> {
-    const membership = await this.householdService.requireMembership(
-      user.sub,
-      id,
-    );
-    if (membership.role !== 'OWNER') {
-      throw new ForbiddenException(
-        'Only the household owner can invite new members',
-      );
-    }
+    await this.householdService.requireOwnerMembership(user.sub, id);
     return { inviteToken: this.householdService.createInvite(id) };
   }
 

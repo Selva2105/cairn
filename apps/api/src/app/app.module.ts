@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { HouseholdModule } from './household/household.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PipelineModule } from './pipeline/pipeline.module';
+import { RulesModule } from './rules/rules.module';
 import { TasksModule } from './tasks/tasks.module';
 import { UsersModule } from './users/users.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
@@ -23,6 +24,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
     EventsModule,
     DocumentsModule,
     TasksModule,
+    RulesModule,
     NotificationsModule,
     WhatsAppModule,
     PipelineModule,

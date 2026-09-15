@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { DomainEvent } from '@cairn/domain';
+import type { DomainEvent, PrismaDomainEventType } from '@cairn/domain';
 import { toDomainEventType } from '@cairn/domain';
 import { Prisma, PrismaService } from '@cairn/database';
+import type { RuleDefinition } from '@cairn/rules-engine';
 
 const pendingEventWithHousehold =
   Prisma.validator<Prisma.EventLogDefaultArgs>()({
@@ -96,6 +97,29 @@ export class PipelineEventsService {
         sentAt: new Date(),
       },
     });
+  }
+
+  /**
+   * A household's own v2 declarative rules for this event type (ARCHITECTURE.md §9) --
+   * malformed `definition` JSON is filtered out defensively rather than thrown, since one bad
+   * rule shouldn't take down the whole digest run.
+   */
+  async getActiveRules(
+    householdId: string,
+    eventType: PrismaDomainEventType,
+  ): Promise<RuleDefinition[]> {
+    const rows = await this.prisma.rule.findMany({
+      where: { householdId, eventType, isActive: true },
+    });
+    return rows
+      .map((row) => row.definition as unknown as RuleDefinition)
+      .filter(
+        (definition) =>
+          typeof definition === 'object' &&
+          definition !== null &&
+          'when' in definition &&
+          'then' in definition,
+      );
   }
 
   recordNotificationFailed(

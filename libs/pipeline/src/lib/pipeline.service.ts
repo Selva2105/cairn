@@ -110,7 +110,11 @@ export class PipelineService {
     const pending = await this.events.listPending(householdId);
 
     for (const row of pending) {
-      const actions = this.rules.evaluate(toDomainEvent(row));
+      const configuredRules = await this.events.getActiveRules(
+        row.householdId,
+        row.type as PrismaDomainEventType,
+      );
+      const actions = this.rules.evaluate(toDomainEvent(row), configuredRules);
 
       for (const action of actions) {
         if (action.channel !== NOTIFICATION_CHANNELS.EMAIL) {

@@ -10,18 +10,20 @@ import {
 } from '@nestjs/common';
 import type { AccessTokenPayload } from '@cairn/auth';
 import { JwtAuthGuard } from '@cairn/auth';
+import type { Rule } from '@cairn/database';
 
 import { CurrentUser } from '../common/current-user.decorator';
 import { HouseholdService } from '../household/household.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
-import { TasksService } from './tasks.service';
+import { CreateRuleDto } from './dto/create-rule.dto';
+import { UpdateRuleDto } from './dto/update-rule.dto';
+import { RulesService } from './rules.service';
 
+// Owners manage rules/connectors; members see the dashboard -- ARCHITECTURE.md §10.
 @UseGuards(JwtAuthGuard)
-@Controller('households/:householdId/tasks')
-export class TasksController {
+@Controller('households/:householdId/rules')
+export class RulesController {
   constructor(
-    private readonly tasksService: TasksService,
+    private readonly rulesService: RulesService,
     private readonly householdService: HouseholdService,
   ) {}
 
@@ -29,34 +31,32 @@ export class TasksController {
   async list(
     @Param('householdId') householdId: string,
     @CurrentUser() user: AccessTokenPayload,
-  ) {
+  ): Promise<Rule[]> {
     await this.householdService.requireMembership(user.sub, householdId);
-    return this.tasksService.list(householdId);
+    return this.rulesService.list(householdId);
   }
 
   @Post()
   async create(
     @Param('householdId') householdId: string,
-    @Body() dto: CreateTaskDto,
+    @Body() dto: CreateRuleDto,
     @CurrentUser() user: AccessTokenPayload,
-  ) {
-    await this.householdService.requireMembership(user.sub, householdId);
-    return this.tasksService.create(householdId, dto);
+  ): Promise<Rule> {
+    await this.householdService.requireOwnerMembership(user.sub, householdId);
+    return this.rulesService.create(householdId, dto);
   }
 
   @Patch(':id')
   async update(
     @Param('householdId') householdId: string,
     @Param('id') id: string,
-    @Body() dto: UpdateTaskDto,
+    @Body() dto: UpdateRuleDto,
     @CurrentUser() user: AccessTokenPayload,
-  ) {
-    await this.householdService.requireMembership(user.sub, householdId);
-    return this.tasksService.update(householdId, id, dto);
+  ): Promise<Rule> {
+    await this.householdService.requireOwnerMembership(user.sub, householdId);
+    return this.rulesService.update(householdId, id, dto);
   }
 
-  // Owner-only: any member can be assigned a task and update its own status, but removing a
-  // task outright is a household-management action, not a personal one.
   @Delete(':id')
   async remove(
     @Param('householdId') householdId: string,
@@ -64,7 +64,7 @@ export class TasksController {
     @CurrentUser() user: AccessTokenPayload,
   ) {
     await this.householdService.requireOwnerMembership(user.sub, householdId);
-    await this.tasksService.remove(householdId, id);
+    await this.rulesService.remove(householdId, id);
     return { status: 'ok' };
   }
 }
