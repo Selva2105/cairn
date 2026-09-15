@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { Connector, ConnectorContext } from '@cairn/domain';
+import { CalendarConnector } from '@cairn/connectors-calendar';
 import { GmailConnector } from '@cairn/connectors-gmail';
 import { PrismaService } from '@cairn/database';
 
 const CONNECTOR_FACTORIES: Record<string, () => Connector> = {
   GMAIL: () => new GmailConnector(),
+  CALENDAR: () => new CalendarConnector(),
 };
 
 export interface EnabledConnector {

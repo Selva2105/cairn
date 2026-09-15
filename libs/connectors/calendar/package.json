@@ -13,7 +13,11 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "googleapis": "^181.0.0",
+    "@cairn/domain": "workspace:*",
+    "@cairn/shared-utils": "workspace:*"
+  },
   "nx": {
     "tags": [
       "scope:shared",

@@ -11,7 +11,7 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
-      "path": "../shared/utils/tsconfig.lib.json"
+      "path": "../connectors/calendar/tsconfig.lib.json"
     },
     {
       "path": "../connectors/gmail/tsconfig.lib.json"
@@ -21,6 +21,9 @@
     },
     {
       "path": "../rules-engine/tsconfig.lib.json"
+    },
+    {
+      "path": "../shared/utils/tsconfig.lib.json"
     },
     {
       "path": "../shared/constants/tsconfig.lib.json"

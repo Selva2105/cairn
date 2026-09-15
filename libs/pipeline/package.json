@@ -21,7 +21,8 @@
     "@cairn/shared-utils": "workspace:*",
     "@cairn/rules-engine": "workspace:*",
     "@cairn/notifications": "workspace:*",
-    "@cairn/connectors-gmail": "workspace:*"
+    "@cairn/connectors-gmail": "workspace:*",
+    "@cairn/connectors-calendar": "workspace:*"
   },
   "nx": {
     "tags": [

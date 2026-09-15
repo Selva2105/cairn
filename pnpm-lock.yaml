@@ -526,7 +526,17 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
 
-  libs/connectors/calendar: {}
+  libs/connectors/calendar:
+    dependencies:
+      '@cairn/domain':
+        specifier: workspace:*
+        version: link:../../domain
+      '@cairn/shared-utils':
+        specifier: workspace:*
+        version: link:../../shared/utils
+      googleapis:
+        specifier: ^181.0.0
+        version: 181.0.0
 
   libs/connectors/gmail:
     dependencies:
@@ -593,6 +603,9 @@ importers:
 
   libs/pipeline:
     dependencies:
+      '@cairn/connectors-calendar':
+        specifier: workspace:*
+        version: link:../connectors/calendar
       '@cairn/connectors-gmail':
         specifier: workspace:*
         version: link:../connectors/gmail
