@@ -5,7 +5,7 @@
   "scripts": {
     "prepare": "husky",
     "reset": "pnpm exec nx reset && pnpm dev:down && pnpm dev:up",
-    "dev": "NX_TUI=false concurrently -n api,worker,web -c blue,magenta,green \"nx run-many -t serve -p api,worker --parallel=2 --output-style=stream\" \"nx run web:dev\"",
+    "dev": "NX_TUI=false concurrently -n api,worker,web -c blue,magenta,green \"nx run-many -t serve -p api,worker --parallel=2 --output-style=stream\" \"wait-on http://localhost:3000/api/health && nx run web:dev\"",
     "dev:api": "NX_TUI=false nx serve api --output-style=stream",
     "dev:worker": "NX_TUI=false nx serve worker --output-style=stream",
     "dev:bot": "NX_TUI=false nx serve bot --output-style=stream",
@@ -98,6 +98,7 @@
     "typescript-eslint": "^8.58.0",
     "vite": "^8.0.0",
     "vitest": "~4.1.0",
+    "wait-on": "^9.1.0",
     "webpack": "^5.101.3",
     "webpack-cli": "^7.0.0",
     "webpack-dev-server": "^5.2.1"
