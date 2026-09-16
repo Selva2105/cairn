@@ -5,7 +5,7 @@ import type {
   TaskExtracted,
 } from '@cairn/domain';
 import { NOTIFICATION_CHANNELS } from '@cairn/shared-constants';
-import { isWithinDays } from '@cairn/shared-utils';
+import { daysUntil, isWithinDays } from '@cairn/shared-utils';
 
 import type { RuleAction } from './types';
 
@@ -15,12 +15,11 @@ const BILL_DUE_SOON_DAYS = 7;
 export function evaluateDocumentExpiring(
   event: DocumentExpiring,
 ): RuleAction[] {
-  if (
-    isWithinDays(
-      new Date(event.payload.expiresOn),
-      DOCUMENT_EXPIRY_WARNING_DAYS,
-    )
-  ) {
+  // Unlike isWithinDays (upcoming-only, used below for bills/maintenance), a document that has
+  // already passed its expiresOn must still notify -- "your passport expired" is the whole
+  // point, not something to silently drop once the date's in the past.
+  const remaining = daysUntil(new Date(event.payload.expiresOn));
+  if (remaining <= DOCUMENT_EXPIRY_WARNING_DAYS) {
     return [
       {
         action: 'notify',
