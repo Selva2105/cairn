@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildEmailContent } from './email-templates';
+import {
+  buildEmailContent,
+  buildHouseholdInviteEmail,
+} from './email-templates';
 
 function baseEvent(overrides: Record<string, unknown>) {
   return {
@@ -84,5 +87,18 @@ describe('buildEmailContent', () => {
     );
     expect(body).toContain('Renew the car insurance');
     expect(body).not.toContain('Due ');
+  });
+});
+
+describe('buildHouseholdInviteEmail', () => {
+  it('renders the inviter, household, and a join link CTA', () => {
+    const { subject, body } = buildHouseholdInviteEmail({
+      householdName: 'The Smiths',
+      inviterName: 'Selva',
+      joinUrl: 'https://example.com/join?token=abc123',
+    });
+    expect(subject).toContain('Selva invited you to join The Smiths');
+    expect(body).toContain('https://example.com/join?token=abc123');
+    expect(body).toContain('Accept invite');
   });
 });

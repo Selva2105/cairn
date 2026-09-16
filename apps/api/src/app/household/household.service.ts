@@ -1,10 +1,16 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { TokenService } from '@cairn/auth';
 import { Prisma, PrismaService, type HouseholdMember } from '@cairn/database';
+import {
+  buildHouseholdInviteEmail,
+  NotificationDispatchService,
+} from '@cairn/notifications';
+import { NOTIFICATION_CHANNELS } from '@cairn/shared-constants';
 
 const SAFE_USER_SELECT = {
   id: true,
@@ -27,6 +33,7 @@ export class HouseholdService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
+    private readonly notifications: NotificationDispatchService,
   ) {}
 
   findById(householdId: string): Promise<HouseholdWithMembers | null> {
@@ -69,8 +76,59 @@ export class HouseholdService {
     return this.tokenService.signInviteToken(householdId);
   }
 
+  /**
+   * Public-facing (no membership check) so an invitee can see which household they're being
+   * asked to join before they've even signed up -- called from the un-guarded
+   * HouseholdInvitePreviewController.
+   */
+  async previewInvite(token: string): Promise<{ householdName: string }> {
+    let householdId: string;
+    try {
+      ({ householdId } = this.tokenService.verifyInviteToken(token));
+    } catch {
+      throw new BadRequestException(
+        'This invite link is invalid or has expired',
+      );
+    }
+
+    const household = await this.prisma.household.findUnique({
+      where: { id: householdId },
+      select: { name: true },
+    });
+    if (!household) {
+      throw new NotFoundException('Household not found');
+    }
+    return { householdName: household.name };
+  }
+
+  async sendInviteEmail(params: {
+    to: string;
+    householdName: string;
+    inviterName: string;
+    token: string;
+  }): Promise<void> {
+    const appUrl = process.env.WEB_APP_ORIGIN ?? 'http://localhost:4200';
+    const { subject, body } = buildHouseholdInviteEmail({
+      householdName: params.householdName,
+      inviterName: params.inviterName,
+      joinUrl: `${appUrl}/join?token=${params.token}`,
+    });
+    await this.notifications.dispatch(NOTIFICATION_CHANNELS.EMAIL, {
+      to: params.to,
+      subject,
+      body,
+    });
+  }
+
   joinWithInvite(userId: string, token: string): Promise<HouseholdMember> {
-    const { householdId } = this.tokenService.verifyInviteToken(token);
+    let householdId: string;
+    try {
+      ({ householdId } = this.tokenService.verifyInviteToken(token));
+    } catch {
+      throw new BadRequestException(
+        'This invite link is invalid or has expired',
+      );
+    }
     return this.prisma.householdMember.upsert({
       where: { householdId_userId: { householdId, userId } },
       update: {},

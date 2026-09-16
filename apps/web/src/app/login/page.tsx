@@ -14,7 +14,10 @@ export default async function LoginPage({
       <LoginForm redirectTo={from ?? '/dashboard/overview'} />
       <p className="text-sm text-muted-foreground">
         No account?{' '}
-        <Link href="/signup" className="text-primary hover:underline">
+        <Link
+          href={from ? `/signup?from=${encodeURIComponent(from)}` : '/signup'}
+          className="text-primary hover:underline"
+        >
           Sign up
         </Link>
       </p>

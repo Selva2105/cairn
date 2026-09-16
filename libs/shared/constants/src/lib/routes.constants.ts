@@ -12,6 +12,7 @@ export const API_ROUTES = {
     BASE: '/households',
     MEMBERS: (id: string) => `/households/${id}/members`,
     INVITE: (id: string) => `/households/${id}/invite`,
+    INVITE_PREVIEW: (token: string) => `/households/invite/${token}`,
   },
   PIPELINE: {
     RUN: '/internal/pipeline/run',

@@ -29,7 +29,7 @@ const signupSchema = z.object({
 
 type SignupInput = z.infer<typeof signupSchema>;
 
-export function SignupForm() {
+export function SignupForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const {
@@ -45,7 +45,7 @@ export function SignupForm() {
         method: 'POST',
         body: JSON.stringify(values),
       });
-      router.push('/dashboard/overview');
+      router.push(redirectTo);
       router.refresh();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : 'Signup failed');

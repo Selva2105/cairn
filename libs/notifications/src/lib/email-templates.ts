@@ -22,7 +22,7 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function layout(
+export function renderBrandedEmail(
   headline: string,
   bodyHtml: string,
   ctaHref: string,
@@ -69,7 +69,7 @@ export function buildEmailContent(event: DomainEvent): EmailContent {
         : `${label} is expiring soon`;
       return {
         subject: `Cairn: ${headline}`,
-        body: layout(
+        body: renderBrandedEmail(
           headline,
           `<p style="margin:0;">${isExpired ? 'This expired on' : 'This expires on'} <strong>${formatDateTime(event.payload.expiresOn)}</strong>.</p>`,
           `${APP_URL}/dashboard/documents`,
@@ -83,7 +83,7 @@ export function buildEmailContent(event: DomainEvent): EmailContent {
       const amount = `${event.payload.currency} ${event.payload.amount.toFixed(2)}`;
       return {
         subject: `Cairn: ${headline}`,
-        body: layout(
+        body: renderBrandedEmail(
           headline,
           `<p style="margin:0;"><strong>${amount}</strong> due <strong>${formatDateTime(event.payload.dueDate)}</strong>${event.payload.isRecurring ? ' &mdash; recurring' : ''}.</p>`,
           `${APP_URL}/dashboard/overview`,
@@ -96,7 +96,7 @@ export function buildEmailContent(event: DomainEvent): EmailContent {
       const headline = `${event.payload.asset} needs attention`;
       return {
         subject: `Cairn: ${headline}`,
-        body: layout(
+        body: renderBrandedEmail(
           headline,
           `<p style="margin:0;"><strong>${event.payload.task}</strong> is due <strong>${formatDateTime(event.payload.dueOn)}</strong>.</p>`,
           `${APP_URL}/dashboard/overview`,
@@ -112,7 +112,7 @@ export function buildEmailContent(event: DomainEvent): EmailContent {
         : '';
       return {
         subject: `Cairn: ${headline}`,
-        body: layout(
+        body: renderBrandedEmail(
           headline,
           `<p style="margin:0;">${event.payload.description}</p>${dueLine}`,
           `${APP_URL}/dashboard/tasks`,
@@ -121,4 +121,27 @@ export function buildEmailContent(event: DomainEvent): EmailContent {
       };
     }
   }
+}
+
+export interface HouseholdInviteEmailParams {
+  householdName: string;
+  inviterName: string;
+  joinUrl: string;
+}
+
+export function buildHouseholdInviteEmail({
+  householdName,
+  inviterName,
+  joinUrl,
+}: HouseholdInviteEmailParams): EmailContent {
+  const headline = `${inviterName} invited you to join ${householdName}`;
+  return {
+    subject: `Cairn: ${headline}`,
+    body: renderBrandedEmail(
+      headline,
+      `<p style="margin:0;">Cairn helps ${householdName} keep track of bills, documents, and maintenance before anything slips through the cracks. Join to see what's already being tracked.</p>`,
+      joinUrl,
+      'Accept invite',
+    ),
+  };
 }
