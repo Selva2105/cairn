@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { fromPrismaEventType } from '@cairn/domain';
 import type { DomainEvent, PrismaDomainEventType } from '@cairn/domain';
 import { NOTIFICATION_CHANNELS } from '@cairn/shared-constants';
-import { NotificationDispatchService } from '@cairn/notifications';
+import {
+  buildEmailContent,
+  NotificationDispatchService,
+} from '@cairn/notifications';
 import { RulesEngineService } from '@cairn/rules-engine';
 
 import { ConnectorRegistryService } from './connector-registry.service';
@@ -110,21 +113,23 @@ export class PipelineService {
     const pending = await this.events.listPending(householdId);
 
     for (const row of pending) {
+      const domainEvent = toDomainEvent(row);
       const configuredRules = await this.events.getActiveRules(
         row.householdId,
         row.type as PrismaDomainEventType,
       );
-      const actions = this.rules.evaluate(toDomainEvent(row), configuredRules);
+      const actions = this.rules.evaluate(domainEvent, configuredRules);
 
       for (const action of actions) {
         if (action.channel !== NOTIFICATION_CHANNELS.EMAIL) {
           continue;
         }
+        const { subject, body: html } = buildEmailContent(domainEvent);
         for (const member of row.household.members) {
           const payload = {
             to: member.user.email,
-            subject: `Cairn: ${row.type.replace(/_/g, ' ').toLowerCase()}`,
-            body: `<p>${JSON.stringify(row.payload)}</p>`,
+            subject,
+            body: html,
           };
           try {
             await this.notifications.dispatch(

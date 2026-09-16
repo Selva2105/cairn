@@ -16,6 +16,7 @@
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "nodemailer": "^10.0.0",
+    "@cairn/domain": "workspace:*",
     "@cairn/shared-config": "workspace:*",
     "@cairn/shared-constants": "workspace:*"
   },

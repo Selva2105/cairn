@@ -628,6 +628,9 @@ importers:
 
   libs/notifications:
     dependencies:
+      '@cairn/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@cairn/shared-config':
         specifier: workspace:*
         version: link:../shared/config

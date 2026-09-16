@@ -15,6 +15,9 @@
     },
     {
       "path": "../shared/config/tsconfig.lib.json"
+    },
+    {
+      "path": "../domain/tsconfig.lib.json"
     }
   ],
   "exclude": [
