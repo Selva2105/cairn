@@ -41,6 +41,9 @@ export default async function DocumentsPage() {
               <Badge variant={expiryVariant(document.expiresOn)}>
                 {formatExpiry(document.expiresOn)}
               </Badge>
+              <p className="text-xs text-muted-foreground">
+                {formatExpiryDateTime(document.expiresOn)}
+              </p>
               {document.notes && (
                 <p className="text-sm text-muted-foreground">
                   {document.notes}
@@ -76,4 +79,11 @@ function formatExpiry(dateIso: string): string {
     return `Expired ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} ago`;
   if (days === 0) return 'Expires today';
   return `Renews in ${days} day${days === 1 ? '' : 's'}`;
+}
+
+function formatExpiryDateTime(dateIso: string): string {
+  return new Date(dateIso).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }

@@ -22,7 +22,7 @@ const DOCUMENT_TYPES = [
 const documentSchema = z.object({
   type: z.enum(DOCUMENT_TYPES),
   label: z.string().min(1, 'Label is required').max(120),
-  expiresOn: z.string().min(1, 'Expiry date is required'),
+  expiresOn: z.string().min(1, 'Expiry date and time are required'),
   notes: z.string().max(500).optional(),
 });
 
@@ -85,7 +85,11 @@ export function DocumentForm({ householdId }: { householdId: string }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="expiresOn">Expires on</Label>
-          <Input id="expiresOn" type="date" {...register('expiresOn')} />
+          <Input
+            id="expiresOn"
+            type="datetime-local"
+            {...register('expiresOn')}
+          />
           {errors.expiresOn && (
             <p className="text-sm text-destructive">
               {errors.expiresOn.message}
