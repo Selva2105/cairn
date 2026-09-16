@@ -310,7 +310,7 @@ services:
     ports: ['6380:6379'] # host 6380 -- avoids clashing with another local project's Redis on 6379
 
   mailhog: # local SMTP capture for testing digest emails
-    image: mailhog/mailhog
+    image: axllent/mailpit # mailhog/mailhog is amd64-only/unmaintained; mailpit is a maintained, multi-arch drop-in
     ports: ['11025:1025', '18025:8025'] # host 11025/18025 for the same reason
 
   adminer: # quick DB browser

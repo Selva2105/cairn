@@ -13,7 +13,9 @@ services:
     ports: ['6380:6379']
 
   mailhog:
-    image: mailhog/mailhog
+    # mailhog/mailhog is amd64-only and unmaintained; mailpit is a maintained,
+    # multi-arch (incl. arm64/Apple Silicon), API-compatible drop-in replacement.
+    image: axllent/mailpit
     ports: ['11025:1025', '18025:8025']
 
   adminer:
