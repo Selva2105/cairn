@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@cairn/ui';
 
 import { apiFetch } from '../../../lib/api-client';
 import { requireSession } from '../../../lib/session';
+import { DocumentDeleteButton } from './document-delete-button';
 import { DocumentForm } from './document-form';
 import { ExpiryCountdown } from './expiry-countdown';
 
@@ -46,6 +47,11 @@ export default async function DocumentsPage() {
                   {document.notes}
                 </p>
               )}
+              <DocumentDeleteButton
+                householdId={householdId}
+                documentId={document.id}
+                label={document.label}
+              />
             </CardContent>
           </Card>
         ))}
