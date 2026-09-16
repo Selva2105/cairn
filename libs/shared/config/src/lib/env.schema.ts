@@ -24,6 +24,9 @@ export const envSchema = z.object({
 
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
+  // Unset for mailpit locally (no auth); set for an authenticated relay like Brevo in production.
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
 
   CRON_SECRET: z.string().min(16),
 });

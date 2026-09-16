@@ -15,10 +15,16 @@ export class EmailChannel implements NotificationChannel, OnModuleInit {
   constructor(private readonly config: AppConfigService) {}
 
   onModuleInit(): void {
+    const user = this.config.get('SMTP_USER');
+    const password = this.config.get('SMTP_PASSWORD');
+
     this.transporter = createTransport({
       host: this.config.get('SMTP_HOST'),
       port: this.config.get('SMTP_PORT'),
+      // mailpit locally takes no auth; Brevo (and most real relays) require it -- only send
+      // credentials when they're actually configured.
       secure: false,
+      ...(user && password ? { auth: { user, pass: password } } : {}),
     });
   }
 
