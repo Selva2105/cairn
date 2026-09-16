@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Label } from '@cairn/ui';
+import { Button, DateTimePicker, Input, Label } from '@cairn/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -22,7 +22,7 @@ const DOCUMENT_TYPES = [
 const documentSchema = z.object({
   type: z.enum(DOCUMENT_TYPES),
   label: z.string().min(1, 'Label is required').max(120),
-  expiresOn: z.string().min(1, 'Expiry date and time are required'),
+  expiresOn: z.date({ message: 'Expiry date and time are required' }),
   notes: z.string().max(500).optional(),
 });
 
@@ -33,6 +33,7 @@ export function DocumentForm({ householdId }: { householdId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -48,7 +49,7 @@ export function DocumentForm({ householdId }: { householdId: string }) {
         method: 'POST',
         body: JSON.stringify({
           ...values,
-          expiresOn: new Date(values.expiresOn).toISOString(),
+          expiresOn: values.expiresOn.toISOString(),
         }),
       });
       toast.success('Document added');
@@ -85,10 +86,12 @@ export function DocumentForm({ householdId }: { householdId: string }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="expiresOn">Expires on</Label>
-          <Input
-            id="expiresOn"
-            type="datetime-local"
-            {...register('expiresOn')}
+          <Controller
+            name="expiresOn"
+            control={control}
+            render={({ field }) => (
+              <DateTimePicker value={field.value} onChange={field.onChange} />
+            )}
           />
           {errors.expiresOn && (
             <p className="text-sm text-destructive">
