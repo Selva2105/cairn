@@ -7,6 +7,8 @@ export const API_ROUTES = {
     GOOGLE: '/auth/google',
     GOOGLE_CALLBACK: '/auth/google/callback',
     SESSION: '/auth/session',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
   },
   HOUSEHOLDS: {
     BASE: '/households',

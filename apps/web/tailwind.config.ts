@@ -61,9 +61,24 @@ const config: Config = {
         moss,
       },
       borderRadius: {
+        '2xl': 'calc(var(--radius) + 6px)',
+        xl: 'calc(var(--radius) + 2px)',
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      boxShadow: {
+        glass:
+          '0 8px 30px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02)',
+        'glass-hover':
+          '0 14px 40px 0 rgba(0, 0, 0, 0.08), 0 2px 6px 0 rgba(0, 0, 0, 0.04)',
+        'glass-lg':
+          '0 20px 50px -10px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.04)',
+        'glow-primary': '0 0 24px -2px rgba(189, 91, 44, 0.35)',
+        'glow-primary-sm': '0 0 14px -2px rgba(189, 91, 44, 0.25)',
+        'glow-success': '0 0 20px -2px rgba(76, 150, 81, 0.3)',
+        'inner-glow': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.25)',
+        'inner-glow-subtle': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.12)',
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
@@ -77,10 +92,22 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'float-slow': {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(25px, -35px) scale(1.08)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.95)' },
+        },
+        'float-reverse': {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(-30px, 30px) scale(1.05)' },
+          '66%': { transform: 'translate(25px, -20px) scale(0.92)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'float-slow': 'float-slow 20s ease-in-out infinite',
+        'float-reverse': 'float-reverse 24s ease-in-out infinite',
       },
     },
   },

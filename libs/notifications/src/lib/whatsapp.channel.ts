@@ -16,8 +16,12 @@ export class WhatsAppChannel implements NotificationChannel {
   constructor(private readonly config: AppConfigService) {}
 
   async send(payload: NotificationPayload): Promise<void> {
-    const phoneNumberId = this.config.get('WHATSAPP_PHONE_NUMBER_ID');
-    const accessToken = this.config.get('WHATSAPP_ACCESS_TOKEN');
+    const phoneNumberId =
+      this.config.get('WHATSAPP_PHONE_NUMBER_ID') ||
+      process.env['WHATSAPP_PHONE_NUMBER_ID'];
+    const accessToken =
+      this.config.get('WHATSAPP_ACCESS_TOKEN') ||
+      process.env['WHATSAPP_ACCESS_TOKEN'];
     if (!phoneNumberId || !accessToken) {
       throw new Error(
         'WhatsApp channel requires WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN',
@@ -36,7 +40,14 @@ export class WhatsAppChannel implements NotificationChannel {
           messaging_product: 'whatsapp',
           to: payload.to,
           type: 'text',
-          text: { body: `${payload.subject}\n\n${stripHtml(payload.body)}` },
+          text: {
+            body:
+              payload.body.trim().startsWith(payload.subject) ||
+              payload.body.trim().startsWith(`*${payload.subject}`) ||
+              !payload.subject
+                ? stripHtml(payload.body).trim()
+                : `${payload.subject}\n\n${stripHtml(payload.body).trim()}`,
+          },
         }),
       },
     );

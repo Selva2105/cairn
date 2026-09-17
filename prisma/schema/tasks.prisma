@@ -4,15 +4,23 @@ enum TaskStatus {
   DONE
 }
 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model Task {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   householdId String
   description String
   assigneeId  String?
-  status      TaskStatus @default(OPEN)
+  status      TaskStatus   @default(OPEN)
+  priority    TaskPriority @default(MEDIUM)
   dueOn       DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   assignee  User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])

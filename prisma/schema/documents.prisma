@@ -1,15 +1,8 @@
-enum DocumentType {
-  PASSPORT
-  INSURANCE
-  WARRANTY
-  REGISTRATION
-  OTHER
-}
 
 model Document {
   id          String       @id @default(uuid())
   householdId String
-  type        DocumentType
+  type        String
   label       String
   expiresOn   DateTime
   notes       String?
@@ -19,5 +12,6 @@ model Document {
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   @@index([householdId, expiresOn])
+  @@index([householdId, type])
   @@map("documents")
 }

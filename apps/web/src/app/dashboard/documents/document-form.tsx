@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, DateTimePicker, Input, Label } from '@cairn/ui';
+import { FilePlus } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -11,16 +12,8 @@ import { z } from 'zod';
 import { ApiError } from '../../../lib/api-error';
 import { browserApiFetch } from '../../../lib/api-client-browser';
 
-const DOCUMENT_TYPES = [
-  'PASSPORT',
-  'INSURANCE',
-  'WARRANTY',
-  'REGISTRATION',
-  'OTHER',
-] as const;
-
 const documentSchema = z.object({
-  type: z.enum(DOCUMENT_TYPES),
+  type: z.string().min(1, 'Document type is required'),
   label: z.string().min(1, 'Label is required').max(120),
   expiresOn: z.date({ message: 'Expiry date and time are required' }),
   notes: z.string().max(500).optional(),
@@ -28,7 +21,13 @@ const documentSchema = z.object({
 
 type DocumentInput = z.infer<typeof documentSchema>;
 
-export function DocumentForm({ householdId }: { householdId: string }) {
+export function DocumentForm({
+  householdId,
+  documentTypes,
+}: {
+  householdId: string;
+  documentTypes: string[];
+}) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const {
@@ -39,7 +38,7 @@ export function DocumentForm({ householdId }: { householdId: string }) {
     formState: { errors },
   } = useForm<DocumentInput>({
     resolver: zodResolver(documentSchema),
-    defaultValues: { type: 'OTHER' },
+    defaultValues: { type: documentTypes[0] ?? 'OTHER' },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -67,25 +66,47 @@ export function DocumentForm({ householdId }: { householdId: string }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-4 rounded-lg border p-4"
+      className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 sm:p-6"
     >
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="type">Type</Label>
+      <div className="flex items-center gap-2.5 pb-1 border-b border-border">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <FilePlus className="h-4 w-4" />
+        </div>
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            Add new document
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Keep tabs on renewals, warranties, and registrations
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="type" className="text-sm font-medium">
+            Document type
+          </Label>
           <select
             id="type"
-            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/20"
             {...register('type')}
           >
-            {DOCUMENT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
+            {documentTypes.map((type) => (
+              <option
+                key={type}
+                value={type}
+                className="bg-popover text-popover-foreground"
+              >
+                {type.replace(/_/g, ' ')}
               </option>
             ))}
           </select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="expiresOn">Expires on</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="expiresOn" className="text-sm font-medium">
+            Expires on
+          </Label>
           <Controller
             name="expiresOn"
             control={control}
@@ -94,26 +115,46 @@ export function DocumentForm({ householdId }: { householdId: string }) {
             )}
           />
           {errors.expiresOn && (
-            <p className="text-sm text-destructive">
+            <p className="text-xs font-medium text-destructive">
               {errors.expiresOn.message}
             </p>
           )}
         </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="label">Label</Label>
-        <Input id="label" placeholder="My Passport" {...register('label')} />
-        {errors.label && (
-          <p className="text-sm text-destructive">{errors.label.message}</p>
-        )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="label" className="text-sm font-medium">
+            Label
+          </Label>
+          <Input
+            id="label"
+            placeholder="e.g. Passport, Home Insurance"
+            {...register('label')}
+          />
+          {errors.label && (
+            <p className="text-xs font-medium text-destructive">
+              {errors.label.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="notes" className="text-sm font-medium">
+            Notes (optional)
+          </Label>
+          <Input
+            id="notes"
+            placeholder="Policy #, renewal link, or notes"
+            {...register('notes')}
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes (optional)</Label>
-        <Input id="notes" {...register('notes')} />
+
+      <div className="pt-2">
+        <Button type="submit" disabled={submitting} className="self-start">
+          {submitting ? 'Adding...' : 'Add document'}
+        </Button>
       </div>
-      <Button type="submit" disabled={submitting} className="self-start">
-        {submitting ? 'Adding...' : 'Add document'}
-      </Button>
     </form>
   );
 }

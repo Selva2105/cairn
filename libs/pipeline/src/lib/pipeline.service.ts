@@ -8,6 +8,7 @@ import {
 } from '@cairn/notifications';
 import { RulesEngineService } from '@cairn/rules-engine';
 
+import { BillDueScannerService } from './bill-due-scanner.service';
 import { ConnectorRegistryService } from './connector-registry.service';
 import { DocumentExpiryScannerService } from './document-expiry-scanner.service';
 import {
@@ -20,6 +21,7 @@ export interface PipelineRunSummary {
   skipped: number;
   failedConnectors: number;
   documentsScanned: number;
+  billsScanned: number;
   processed: number;
   notified: number;
 }
@@ -39,6 +41,7 @@ export class PipelineService {
     private readonly notifications: NotificationDispatchService,
     private readonly events: PipelineEventsService,
     private readonly documentExpiryScanner: DocumentExpiryScannerService,
+    private readonly billDueScanner: BillDueScannerService,
   ) {}
 
   /**
@@ -55,12 +58,14 @@ export class PipelineService {
       skipped: 0,
       failedConnectors: 0,
       documentsScanned: 0,
+      billsScanned: 0,
       processed: 0,
       notified: 0,
     };
 
     summary.documentsScanned =
       await this.documentExpiryScanner.scan(householdId);
+    summary.billsScanned = await this.billDueScanner.scan(householdId);
     await this.ingestFromConnectors(householdId, summary);
     await this.evaluateAndNotifyPending(householdId, summary);
 
@@ -120,17 +125,26 @@ export class PipelineService {
       );
       const actions = this.rules.evaluate(domainEvent, configuredRules);
 
-      for (const action of actions) {
-        if (action.channel !== NOTIFICATION_CHANNELS.EMAIL) {
-          continue;
-        }
-        const { subject, body: html } = buildEmailContent(domainEvent);
-        for (const member of row.household.members) {
-          const payload = {
-            to: member.user.email,
-            subject,
-            body: html,
-          };
+      if (actions.length === 0) {
+        await this.events.markProcessed(row.id);
+        summary.processed++;
+        continue;
+      }
+
+      // Read the household's preferred digest channel (defaults EMAIL)
+      const digestChannel = await this.events.getHouseholdDigestChannel(
+        row.householdId,
+      );
+      const sendEmail = digestChannel === 'EMAIL' || digestChannel === 'BOTH';
+      const sendWhatsApp =
+        digestChannel === 'WHATSAPP' || digestChannel === 'BOTH';
+
+      const { subject, body: html, text } = buildEmailContent(domainEvent);
+
+      for (const member of row.household.members) {
+        // ── EMAIL ──────────────────────────────────────────────────────────
+        if (sendEmail) {
+          const payload = { to: member.user.email, subject, body: html };
           try {
             await this.notifications.dispatch(
               NOTIFICATION_CHANNELS.EMAIL,
@@ -145,7 +159,7 @@ export class PipelineService {
             summary.notified++;
           } catch (error) {
             this.logger.error(
-              `Failed to send EMAIL notification for event ${row.id}`,
+              `Failed EMAIL for event ${row.id} → ${member.user.email}`,
               error as Error,
             );
             await this.events.recordNotificationFailed(
@@ -153,6 +167,49 @@ export class PipelineService {
               row.id,
               'EMAIL',
               payload,
+              (error as Error).message,
+            );
+          }
+        }
+
+        // ── WHATSAPP ───────────────────────────────────────────────────────
+        if (sendWhatsApp) {
+          const phone = member.user.phone;
+          if (!phone) {
+            this.logger.warn(
+              `Skipping WhatsApp for ${member.user.email} — no phone linked`,
+            );
+            continue;
+          }
+          const plainBody =
+            text ??
+            html
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+          const waPayload = { to: phone, subject, body: plainBody };
+          try {
+            await this.notifications.dispatch(
+              NOTIFICATION_CHANNELS.WHATSAPP,
+              waPayload,
+            );
+            await this.events.recordNotificationSent(
+              row.householdId,
+              row.id,
+              'WHATSAPP',
+              waPayload,
+            );
+            summary.notified++;
+          } catch (error) {
+            this.logger.error(
+              `Failed WhatsApp for event ${row.id} → ${phone}`,
+              error as Error,
+            );
+            await this.events.recordNotificationFailed(
+              row.householdId,
+              row.id,
+              'WHATSAPP',
+              waPayload,
               (error as Error).message,
             );
           }

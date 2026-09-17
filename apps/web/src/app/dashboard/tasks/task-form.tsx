@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Input } from '@cairn/ui';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '../../../lib/api-error';
@@ -34,14 +35,24 @@ export function TaskForm({ householdId }: { householdId: string }) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="flex items-end gap-3">
-      <Input
-        placeholder="What needs doing?"
-        value={description}
-        onChange={(event) => setDescription(event.target.value)}
-        className="flex-1"
-      />
-      <Button type="submit" disabled={submitting || !description.trim()}>
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+    >
+      <div className="relative flex-1">
+        <Input
+          placeholder="What needs doing? (e.g. Schedule chimney inspection)"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          className="pr-4"
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={submitting || !description.trim()}
+        className="shrink-0"
+      >
+        <Plus className="mr-1.5 h-4 w-4" />
         {submitting ? 'Adding...' : 'Add task'}
       </Button>
     </form>

@@ -82,4 +82,25 @@ export class TokenService {
     }
     return { householdId: payload.householdId };
   }
+
+  signPasswordResetToken(userId: string, email: string): string {
+    return this.jwtService.sign(
+      { userId, email, purpose: 'password-reset' },
+      { secret: this.config.get('JWT_ACCESS_SECRET'), expiresIn: '1h' },
+    );
+  }
+
+  verifyPasswordResetToken(token: string): { userId: string; email: string } {
+    const payload = this.jwtService.verify<{
+      userId: string;
+      email: string;
+      purpose: string;
+    }>(token, {
+      secret: this.config.get('JWT_ACCESS_SECRET'),
+    });
+    if (payload.purpose !== 'password-reset') {
+      throw new Error('Invalid password reset token');
+    }
+    return { userId: payload.userId, email: payload.email };
+  }
 }

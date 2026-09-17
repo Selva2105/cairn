@@ -5,10 +5,12 @@ import {
   ManualEntryConnector,
   parseWhatsAppCommand,
 } from '@cairn/connectors-manual-entry';
-import { PrismaService } from '@cairn/database';
+import { PrismaService, TaskPriority } from '@cairn/database';
 import { NotificationDispatchService } from '@cairn/notifications';
 import { PipelineService } from '@cairn/pipeline';
-import { NOTIFICATION_CHANNELS } from '@cairn/shared-constants';
+import { EVENT_TYPES, NOTIFICATION_CHANNELS } from '@cairn/shared-constants';
+
+import { HouseholdConfigService } from '../config/household-config.service';
 
 export interface InboundMessage {
   from: string; // phone number, digits only, as Meta sends it (no leading '+')
@@ -24,6 +26,7 @@ export class WhatsAppService {
     private readonly prisma: PrismaService,
     private readonly pipeline: PipelineService,
     private readonly notifications: NotificationDispatchService,
+    private readonly configService: HouseholdConfigService,
   ) {}
 
   async handleInboundMessage(message: InboundMessage): Promise<void> {
@@ -44,7 +47,7 @@ export class WhatsAppService {
     if (!command) {
       await this.reply(
         phone,
-        'Sorry, I didn\'t understand that. Try: "bill Electricity 1200 15-Oct" or "doc passport 2027-03-01".',
+        'Sorry, I didn\'t understand that. Try: "bill Electricity 1200 15-Oct", "task Fix leaking pipe", or "doc passport 2027-03-01".',
       );
       return;
     }
@@ -59,11 +62,109 @@ export class WhatsAppService {
       householdId,
     };
 
+    const config = await this.configService.getOrCreateConfig(householdId);
+    const priority =
+      (config.defaultTaskPriority as TaskPriority) ?? TaskPriority.MEDIUM;
+
     const wasNew = await this.pipeline.recordManualEvent(householdId, event);
+
+    if (wasNew) {
+      if (command.type === EVENT_TYPES.BILL_DETECTED) {
+        const payload = command.payload as {
+          vendor: string;
+          amount: number;
+          dueDate: string;
+          currency?: string;
+        };
+        const currency = payload.currency ?? config.currency;
+        const symbol =
+          config.currencySymbol || (currency === 'INR' ? '₹' : '$');
+
+        // Auto-create bill record
+        await this.prisma.bill
+          .create({
+            data: {
+              householdId,
+              vendor: payload.vendor,
+              amount: payload.amount,
+              currency,
+              dueDate: new Date(payload.dueDate),
+            },
+          })
+          .catch((err) => this.logger.error('Failed to create Bill', err));
+
+        // Auto-create Task for the household tasks board
+        await this.prisma.task
+          .create({
+            data: {
+              householdId,
+              description: `Pay ${payload.vendor} bill (${symbol}${payload.amount})`,
+              dueOn: new Date(payload.dueDate),
+              status: 'OPEN',
+              priority,
+            },
+          })
+          .catch((err) => this.logger.error('Failed to create Task', err));
+      } else if (command.type === EVENT_TYPES.TASK_EXTRACTED) {
+        const payload = command.payload as { description: string };
+        await this.prisma.task
+          .create({
+            data: {
+              householdId,
+              description: payload.description,
+              status: 'OPEN',
+              priority,
+            },
+          })
+          .catch((err) => this.logger.error('Failed to create Task', err));
+      } else if (command.type === EVENT_TYPES.DOCUMENT_EXPIRING) {
+        const payload = command.payload as {
+          documentType: string;
+          expiresOn: string;
+        };
+
+        const raw = payload.documentType
+          .trim()
+          .toUpperCase()
+          .replace(/\s+/g, '_');
+        const matchedType =
+          config.documentTypes.find(
+            (t) => t === raw || t.includes(raw) || raw.includes(t),
+          ) ?? raw;
+
+        if (!config.documentTypes.includes(matchedType)) {
+          await this.configService.addDocumentType(householdId, matchedType);
+        }
+
+        await this.prisma.document
+          .create({
+            data: {
+              householdId,
+              type: matchedType,
+              label: payload.documentType,
+              expiresOn: new Date(payload.expiresOn),
+            },
+          })
+          .catch((err) => this.logger.error('Failed to create Document', err));
+
+        await this.prisma.task
+          .create({
+            data: {
+              householdId,
+              description: `Renew ${payload.documentType} before expiration`,
+              dueOn: new Date(payload.expiresOn),
+              status: 'OPEN',
+              priority,
+            },
+          })
+          .catch((err) => this.logger.error('Failed to create Task', err));
+      }
+    }
+
     await this.reply(
       phone,
       wasNew
-        ? 'Got it -- added to your household digest.'
+        ? 'Got it -- added to your household tasks & digest.'
         : 'Already logged that one.',
     );
   }

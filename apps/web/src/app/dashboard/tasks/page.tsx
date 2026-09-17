@@ -1,15 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@cairn/ui';
+import { Badge } from '@cairn/ui';
 
 import { apiFetch } from '../../../lib/api-client';
 import { requireSession } from '../../../lib/session';
-import { TaskForm } from './task-form';
-import { TaskRow } from './task-row';
-
-interface TaskRowData {
-  id: string;
-  description: string;
-  status: 'OPEN' | 'IN_PROGRESS' | 'DONE';
-}
+import { TasksClient, TaskRowData } from './tasks-client';
 
 export default async function TasksPage() {
   const session = await requireSession();
@@ -20,32 +13,27 @@ export default async function TasksPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Tasks</h1>
+    <div className="flex flex-col gap-8 pb-10">
+      {/* Header section */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Tasks & Chores
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Shared responsibilities, maintenance duties, recurring upkeep, and
+            quick to-dos.
+          </p>
+        </div>
+        <Badge
+          variant="secondary"
+          className="font-mono text-xs hidden sm:inline-flex"
+        >
+          {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+        </Badge>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Household task board</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <TaskForm householdId={householdId} />
-          {tasks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No tasks yet.</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {tasks.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  householdId={householdId}
-                  taskId={task.id}
-                  description={task.description}
-                  status={task.status}
-                />
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <TasksClient tasks={tasks} householdId={householdId} />
     </div>
   );
 }

@@ -167,3 +167,43 @@ The worker logs every job's correlation ID (propagated from the originating even
 
 - **Unit** — `PipelineService.runOnce()` with `connectors`/`rules`/`notifications` mocked; assert it skips already-seen `dedupeKey`s, continues past a failing connector, and calls the notification dispatcher with the rules engine's actual output.
 - **Integration** — one fixture-backed fake connector (not a real Gmail call) feeding a canned raw payload through the real rules engine and a fake (in-memory) notification channel, asserting the end state in a Testcontainers Postgres — this is the test that stands in for the "seed a fake email → digest appears" e2e smoke test at a faster, more isolated layer.
+
+---
+
+## 9. BullMQ Task Logging & 2-Day Physical File Retention
+
+All BullMQ asynchronous job lifecycles (`rules-evaluation`, `notification-dispatch`, etc.) are tracked and persisted by `BullmqTaskLoggerService` (`apps/worker/src/app/bullmq-task-logger.service.ts`).
+
+### Key Capabilities:
+
+1. **12-Hour Human-Readable Timestamps**:
+   Every log line includes `[MM/DD/YYYY, hh:mm:ss AM/PM]` formatted with `en-US` locale and `hour12: true`:
+   ```text
+   [09/18/2026, 12:10:00 AM] [ACTIVE]    | Queue: [rules-evaluation] | Job: #repeat:pipeline-scheduled-scan:1789670400000 "scheduled-pipeline-run" (attempt 1)
+   [09/18/2026, 12:10:00 AM] [COMPLETED] | Queue: [rules-evaluation] | Job: #repeat:pipeline-scheduled-scan:1789670400000 "scheduled-pipeline-run" (406ms) | Result: {"documentsScanned":1,"billsScanned":0,"processed":1,"notified":1}
+   ```
+2. **Physical Daily File Rotation**:
+   Logs are written to `./logs/bullmq/bullmq-YYYY-MM-DD.log`.
+3. **Automatic 2-Day Retention**:
+   The service checks the `logs/bullmq` directory on startup and whenever the date rolls over, automatically unlinking any `.log` files older than 2 days (`RETENTION_DAYS = 2`).
+4. **Console Mirroring**:
+   Terminal output mirrors the formatted log with status emojis (⏳ `ACTIVE`, ✅ `COMPLETED`, ❌ `FAILED`) for real-time observability in `pnpm dev`.
+
+---
+
+## 10. Document Expiry & Bill Due Multi-Threshold Scanners
+
+Cairn performs proactive monitoring for expiring documents and upcoming bills, respecting each household's notification preferences (`docReminderDays`, `billReminderDays`, `digestChannel`, `digestTime`):
+
+- **Document Expiry Scanner** (`DocumentExpiryScannerService` in `libs/pipeline`):
+  - Evaluates documents with `expiresOn` dates.
+  - Generates alerts on configured days-before-expiry thresholds (e.g. `[30, 14, 1]`) and on expiry (`DOC_EXPIRED`).
+  - Uses windowed deduplication keys (`DOC_REMINDER_<threshold>D_<docId>`) to prevent duplicate notifications while guaranteeing timely multi-threshold alerts.
+- **Bill Due Scanner** (`BillDueScannerService` in `libs/pipeline`):
+  - Evaluates open bills against `billReminderDays` (e.g. `[7, 3, 1]`).
+  - Generates `BILL_DUE` notifications deduplicated per threshold window.
+- **Outbound Dispatch Queue**:
+  - `QueuedNotificationDispatchService` dispatches events asynchronously into BullMQ's `notification-dispatch` queue.
+  - Channels (`EMAIL`, `WHATSAPP`, `BOTH`) are resolved per household preference, with 3 automatic retries and exponential backoff for network resilience.
+- **On-Demand Manual Trigger**:
+  - Users can trigger an immediate pipeline scan via **Settings $\rightarrow$ Preferences $\rightarrow$ "Scan & Notify Now"** or `POST /api/households/:id/pipeline/run`.

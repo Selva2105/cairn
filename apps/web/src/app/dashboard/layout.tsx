@@ -1,16 +1,9 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 
 import { getSession } from '../../lib/session';
-import { LogoutButton } from './logout-button';
-
-const NAV_ITEMS = [
-  { href: '/dashboard/overview', label: 'Overview' },
-  { href: '/dashboard/documents', label: 'Documents' },
-  { href: '/dashboard/tasks', label: 'Tasks' },
-  { href: '/dashboard/rules', label: 'Rules' },
-  { href: '/dashboard/settings/household', label: 'Household' },
-];
+import { CommandPalette } from '../../components/command-palette';
+import { TopBar } from '../../components/top-bar';
+import { DashboardNav } from './dashboard-nav';
 
 export default async function DashboardLayout({
   children,
@@ -23,25 +16,15 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-56 shrink-0 border-r bg-card p-4">
-        <div className="mb-6 text-lg font-semibold text-primary">Cairn</div>
-        <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="mt-6">
-          <LogoutButton />
-        </div>
-      </aside>
-      <main className="flex-1 p-8">{children}</main>
+    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+      <CommandPalette />
+      <DashboardNav />
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopBar />
+        <main className="flex-1 px-4 py-6 sm:px-6 md:px-8 lg:px-10 xl:px-12 w-full min-w-0">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 
+import { AmbientAurora } from '../components/ambient-aurora';
 import { Providers } from '../lib/providers';
 import { RegisterServiceWorker } from '../lib/register-service-worker';
 import './global.css';
@@ -39,8 +40,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="font-sans">
-        <Providers>{children}</Providers>
+      <body className="font-sans relative min-h-screen overflow-x-hidden">
+        <Providers>
+          <AmbientAurora />
+          {children}
+        </Providers>
         <RegisterServiceWorker />
       </body>
     </html>

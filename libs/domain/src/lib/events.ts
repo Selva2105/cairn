@@ -22,20 +22,24 @@ export const billDetectedSchema = baseEventSchema.extend({
     currency: z.string().length(3),
     dueDate: z.string().datetime(),
     isRecurring: z.boolean(),
+    billId: z.string().optional(),
+    isReminder: z.boolean().optional(),
+    isOverdue: z.boolean().optional(),
+    daysUntilDue: z.number().optional(),
+    reminderThreshold: z.number().optional(),
   }),
 });
 
 export const documentExpiringSchema = baseEventSchema.extend({
   type: z.literal(EVENT_TYPES.DOCUMENT_EXPIRING),
   payload: z.object({
-    documentType: z.enum([
-      'passport',
-      'insurance',
-      'warranty',
-      'registration',
-      'other',
-    ]),
+    documentType: z.string().min(1),
     expiresOn: z.string().datetime(),
+    documentId: z.string().optional(),
+    documentLabel: z.string().optional(),
+    daysUntilExpiry: z.number().optional(),
+    reminderThreshold: z.number().optional(),
+    isExpired: z.boolean().optional(),
   }),
 });
 

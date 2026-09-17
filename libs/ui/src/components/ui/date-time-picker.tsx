@@ -83,7 +83,7 @@ function DateTimePicker({
           onSelect={handleDaySelect}
           autoFocus
         />
-        <div className="border-t p-3">
+        <div className="border-t border-border/50 bg-card/40 backdrop-blur-sm p-3">
           <Input type="time" value={timeValue} onChange={handleTimeChange} />
         </div>
       </PopoverContent>

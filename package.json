@@ -10,6 +10,7 @@
     "dev:worker": "NX_TUI=false nx serve worker --output-style=stream",
     "dev:bot": "NX_TUI=false nx serve bot --output-style=stream",
     "dev:web": "NX_TUI=false nx run web:dev --output-style=stream",
+    "ngrok": "ngrok http --url=secret-motivator-jukebox.ngrok-free.dev 3000",
     "dev:up": "docker compose -f infra/docker/docker-compose.yml up -d",
     "dev:down": "docker compose -f infra/docker/docker-compose.yml down",
     "build": "nx run-many -t build --projects=api,worker,web",
@@ -19,9 +20,13 @@
     "e2e": "nx run web-e2e:e2e",
     "verify": "nx run-many -t typecheck,lint,test,build --all",
     "sync": "nx sync",
-    "db:generate": "nx run database:generate",
-    "db:migrate": "nx run database:migrate",
-    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema"
+    "db:generate": "prisma generate --schema=prisma/schema",
+    "db:migrate": "prisma migrate dev --schema=prisma/schema",
+    "db:migrate:name": "prisma migrate dev --schema=prisma/schema --name",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema",
+    "db:migrate:status": "prisma migrate status --schema=prisma/schema",
+    "db:migrate:reset": "prisma migrate reset --schema=prisma/schema",
+    "db:studio": "prisma studio --schema=prisma/schema"
   },
   "private": true,
   "lint-staged": {
@@ -87,6 +92,7 @@
     "husky": "^9.1.7",
     "jsdom": "^27.1.0",
     "lint-staged": "^17.5.1",
+    "ngrok": "5.0.0-beta.2",
     "nx": "23.2.0",
     "postcss": "^8.5.28",
     "prettier": "^3.8.1",

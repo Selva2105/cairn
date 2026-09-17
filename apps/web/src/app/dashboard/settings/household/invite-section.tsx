@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Input, Label } from '@cairn/ui';
+import { Check, Copy, Link2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '../../../../lib/api-error';
@@ -10,6 +11,7 @@ import { browserApiFetch } from '../../../../lib/api-client-browser';
 export function InviteSection({ householdId }: { householdId: string }) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -36,7 +38,9 @@ export function InviteSection({ householdId }: { householdId: string }) {
     if (!inviteUrl) return;
     try {
       await navigator.clipboard.writeText(inviteUrl);
-      toast.success('Invite link copied');
+      setCopied(true);
+      toast.success('Invite link copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Could not copy -- select and copy the link manually');
     }
@@ -68,9 +72,17 @@ export function InviteSection({ householdId }: { householdId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <form onSubmit={sendEmailInvite} className="flex items-end gap-3">
-        <div className="flex-1 space-y-2">
-          <Label htmlFor="invite-email">Invite by email</Label>
+      <form
+        onSubmit={sendEmailInvite}
+        className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3"
+      >
+        <div className="flex-1 space-y-1.5">
+          <Label
+            htmlFor="invite-email"
+            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          >
+            Invite by email
+          </Label>
           <Input
             id="invite-email"
             type="email"
@@ -80,33 +92,59 @@ export function InviteSection({ householdId }: { householdId: string }) {
             required
           />
         </div>
-        <Button type="submit" disabled={sending || !email}>
+        <Button type="submit" disabled={sending || !email} className="shrink-0">
+          <Mail className="mr-1.5 h-4 w-4" />
           {sending ? 'Sending...' : 'Send invite'}
         </Button>
       </form>
 
-      <div className="flex flex-col gap-3 border-t pt-4">
-        <p className="text-sm text-muted-foreground">
-          Or generate a link to share yourself -- valid for 7 days.
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={generateLink}
-          disabled={generating}
-          className="self-start"
-        >
-          {generating ? 'Generating...' : 'Generate invite link'}
-        </Button>
-        {inviteUrl && (
+      <div className="flex flex-col gap-3.5 border-t border-border/50 pt-5">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium text-foreground">
+            Direct invite link
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Generate a shareable link to send via text or messaging app (valid
+            for 7 days).
+          </p>
+        </div>
+
+        {!inviteUrl ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={generateLink}
+            disabled={generating}
+            className="self-start"
+          >
+            <Link2 className="mr-1.5 h-4 w-4" />
+            {generating ? 'Generating...' : 'Generate link'}
+          </Button>
+        ) : (
           <div className="flex items-center gap-2">
             <Input
               readOnly
               value={inviteUrl}
               onFocus={(event) => event.currentTarget.select()}
+              className="font-mono text-xs"
             />
-            <Button type="button" variant="secondary" onClick={copyLink}>
-              Copy
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={copyLink}
+              className="shrink-0"
+            >
+              {copied ? (
+                <>
+                  <Check className="mr-1.5 h-4 w-4 text-success" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-1.5 h-4 w-4" />
+                  Copy
+                </>
+              )}
             </Button>
           </div>
         )}

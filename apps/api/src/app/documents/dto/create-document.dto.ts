@@ -1,6 +1,5 @@
 import {
   IsDateString,
-  IsEnum,
   IsOptional,
   IsString,
   MaxLength,
@@ -16,8 +15,10 @@ export enum DocumentTypeDto {
 }
 
 export class CreateDocumentDto {
-  @IsEnum(DocumentTypeDto)
-  type!: DocumentTypeDto;
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50)
+  type!: string;
 
   @IsString()
   @MinLength(1)

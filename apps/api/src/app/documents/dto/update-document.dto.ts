@@ -1,18 +1,17 @@
 import {
   IsDateString,
-  IsEnum,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
-import { DocumentTypeDto } from './create-document.dto';
-
 export class UpdateDocumentDto {
   @IsOptional()
-  @IsEnum(DocumentTypeDto)
-  type?: DocumentTypeDto;
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50)
+  type?: string;
 
   @IsOptional()
   @IsString()

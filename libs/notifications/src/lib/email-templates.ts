@@ -3,6 +3,7 @@ import type { DomainEvent } from '@cairn/domain';
 export interface EmailContent {
   subject: string;
   body: string;
+  text?: string;
 }
 
 // Matches apps/web's clay theme (libs/ui/src/theme/colors.ts) so the email doesn't look like a
@@ -51,57 +52,107 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   other: 'Document',
 };
 
+function formatDocumentType(type?: string): string {
+  if (!type) return 'Document';
+  const lower = type.toLowerCase();
+  if (DOCUMENT_TYPE_LABELS[lower]) {
+    return DOCUMENT_TYPE_LABELS[lower];
+  }
+  return lower
+    .split(/[_\s]+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 /**
- * Renders a proper branded HTML email per domain event type, instead of dumping the raw event
- * payload as JSON. DocumentExpiring covers both the "coming up" reminder and the "has now
- * expired" alert (see document-expiry-scanner.service.ts) -- distinguished here by comparing
- * expiresOn against the current time at send time, not by a separate event type.
+ * Renders branded HTML email and WhatsApp plain text per domain event type.
  */
 export function buildEmailContent(event: DomainEvent): EmailContent {
   switch (event.type) {
     case 'DocumentExpiring': {
       const expiresOn = new Date(event.payload.expiresOn);
-      const isExpired = expiresOn.getTime() <= Date.now();
-      const label =
-        DOCUMENT_TYPE_LABELS[event.payload.documentType] ?? 'Document';
-      const headline = isExpired
-        ? `${label} has expired`
-        : `${label} is expiring soon`;
+      const isExpired =
+        event.payload.isExpired ?? expiresOn.getTime() <= Date.now();
+      const typeLabel = formatDocumentType(event.payload.documentType);
+      const docName = event.payload.documentLabel || typeLabel;
+      const daysLeft = event.payload.daysUntilExpiry;
+
+      let headline: string;
+      if (isExpired) {
+        headline = `${docName} has expired`;
+      } else if (daysLeft !== undefined && daysLeft <= 1) {
+        headline = `${docName} expires today`;
+      } else if (daysLeft !== undefined) {
+        headline = `${docName} expires in ${daysLeft} days`;
+      } else {
+        headline = `${docName} is expiring soon`;
+      }
+
+      const formattedDate = formatDateTime(event.payload.expiresOn);
+      const docUrl = `${APP_URL}/dashboard/documents`;
+      const plainText = `*${headline}*\nType: ${typeLabel}\n${isExpired ? 'Expired on' : 'Expires on'}: ${formattedDate}\nView in Cairn: ${docUrl}`;
+
       return {
         subject: `Cairn: ${headline}`,
         body: renderBrandedEmail(
           headline,
-          `<p style="margin:0;">${isExpired ? 'This expired on' : 'This expires on'} <strong>${formatDateTime(event.payload.expiresOn)}</strong>.</p>`,
-          `${APP_URL}/dashboard/documents`,
+          `<p style="margin:0;"><strong>${docName}</strong> (${typeLabel}) ${isExpired ? 'expired on' : 'expires on'} <strong>${formattedDate}</strong>.</p>`,
+          docUrl,
           'View documents',
         ),
+        text: plainText,
       };
     }
 
     case 'BillDetected': {
-      const headline = `New bill from ${event.payload.vendor}`;
+      const isOverdue =
+        event.payload.isOverdue ??
+        new Date(event.payload.dueDate).getTime() <= Date.now();
+      const daysLeft = event.payload.daysUntilDue;
       const amount = `${event.payload.currency} ${event.payload.amount.toFixed(2)}`;
+      const formattedDate = formatDateTime(event.payload.dueDate);
+      const overviewUrl = `${APP_URL}/dashboard/overview`;
+
+      let headline: string;
+      if (isOverdue) {
+        headline = `Bill from ${event.payload.vendor} is overdue`;
+      } else if (daysLeft !== undefined && daysLeft <= 1) {
+        headline = `Bill from ${event.payload.vendor} is due today`;
+      } else if (daysLeft !== undefined) {
+        headline = `Bill from ${event.payload.vendor} is due in ${daysLeft} days`;
+      } else {
+        headline = `New bill from ${event.payload.vendor}`;
+      }
+
+      const plainText = `*${headline}*\nAmount: ${amount}\nDue date: ${formattedDate}${event.payload.isRecurring ? ' (Recurring)' : ''}\nView in Cairn: ${overviewUrl}`;
+
       return {
         subject: `Cairn: ${headline}`,
         body: renderBrandedEmail(
           headline,
-          `<p style="margin:0;"><strong>${amount}</strong> due <strong>${formatDateTime(event.payload.dueDate)}</strong>${event.payload.isRecurring ? ' &mdash; recurring' : ''}.</p>`,
-          `${APP_URL}/dashboard/overview`,
+          `<p style="margin:0;"><strong>${amount}</strong> due <strong>${formattedDate}</strong>${event.payload.isRecurring ? ' &mdash; recurring' : ''}.</p>`,
+          overviewUrl,
           'View overview',
         ),
+        text: plainText,
       };
     }
 
     case 'MaintenanceDue': {
       const headline = `${event.payload.asset} needs attention`;
+      const formattedDate = formatDateTime(event.payload.dueOn);
+      const overviewUrl = `${APP_URL}/dashboard/overview`;
+      const plainText = `*${headline}*\nTask: ${event.payload.task}\nDue: ${formattedDate}\nView in Cairn: ${overviewUrl}`;
+
       return {
         subject: `Cairn: ${headline}`,
         body: renderBrandedEmail(
           headline,
-          `<p style="margin:0;"><strong>${event.payload.task}</strong> is due <strong>${formatDateTime(event.payload.dueOn)}</strong>.</p>`,
-          `${APP_URL}/dashboard/overview`,
+          `<p style="margin:0;"><strong>${event.payload.task}</strong> is due <strong>${formattedDate}</strong>.</p>`,
+          overviewUrl,
           'View overview',
         ),
+        text: plainText,
       };
     }
 
@@ -110,14 +161,18 @@ export function buildEmailContent(event: DomainEvent): EmailContent {
       const dueLine = event.payload.dueOn
         ? `<p style="margin:8px 0 0;color:${CLAY_700};font-size:13px;">Due ${formatDateTime(event.payload.dueOn)}</p>`
         : '';
+      const tasksUrl = `${APP_URL}/dashboard/tasks`;
+      const plainText = `*${headline}*\n${event.payload.description}${event.payload.dueOn ? `\nDue: ${formatDateTime(event.payload.dueOn)}` : ''}\nView in Cairn: ${tasksUrl}`;
+
       return {
         subject: `Cairn: ${headline}`,
         body: renderBrandedEmail(
           headline,
           `<p style="margin:0;">${event.payload.description}</p>${dueLine}`,
-          `${APP_URL}/dashboard/tasks`,
+          tasksUrl,
           'View tasks',
         ),
+        text: plainText,
       };
     }
   }
@@ -143,5 +198,28 @@ export function buildHouseholdInviteEmail({
       joinUrl,
       'Accept invite',
     ),
+    text: `*${headline}*\nJoin your household on Cairn: ${joinUrl}`,
+  };
+}
+
+export interface PasswordResetEmailParams {
+  userName: string;
+  resetUrl: string;
+}
+
+export function buildPasswordResetEmail({
+  userName,
+  resetUrl,
+}: PasswordResetEmailParams): EmailContent {
+  const headline = 'Reset your Cairn password';
+  return {
+    subject: 'Cairn: Reset your password',
+    body: renderBrandedEmail(
+      headline,
+      `<p style="margin:0;">Hi ${userName},</p><p style="margin:12px 0 0;">We received a request to reset the password for your Cairn account. Click the button below to choose a new password. This link will expire in 1 hour.</p><p style="margin:12px 0 0;font-size:12px;color:${CLAY_700};">If you didn't request a password reset, you can safely ignore this email.</p>`,
+      resetUrl,
+      'Reset password',
+    ),
+    text: `Hi ${userName},\nReset your Cairn password here (link valid for 1 hour): ${resetUrl}`,
   };
 }

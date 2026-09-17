@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@cairn/ui';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '../../../lib/api-error';
@@ -47,8 +48,9 @@ export function DocumentDeleteButton({
       size="sm"
       disabled={deleting}
       onClick={remove}
-      className="self-start text-destructive hover:text-destructive"
+      className="self-start text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors h-7 px-2"
     >
+      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
       {deleting ? 'Deleting...' : 'Delete'}
     </Button>
   );

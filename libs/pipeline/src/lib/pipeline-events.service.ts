@@ -9,7 +9,11 @@ const pendingEventWithHousehold =
     include: {
       household: {
         include: {
-          members: { include: { user: { select: { email: true } } } },
+          members: {
+            include: {
+              user: { select: { email: true, phone: true, name: true } },
+            },
+          },
         },
       },
     },
@@ -29,6 +33,14 @@ export class PipelineEventsService {
     return this.prisma.household
       .findMany({ select: { id: true } })
       .then((rows) => rows.map((row) => row.id));
+  }
+
+  async getHouseholdDigestChannel(householdId: string): Promise<string> {
+    const config = await this.prisma.householdConfig.findUnique({
+      where: { householdId },
+      select: { digestChannel: true },
+    });
+    return config?.digestChannel ?? 'EMAIL';
   }
 
   /**

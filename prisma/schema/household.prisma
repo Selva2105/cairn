@@ -17,6 +17,7 @@ model Household {
   bills         Bill[]
   tasks         Task[]
   notifications Notification[]
+  config        HouseholdConfig?
 
   @@map("households")
 }

@@ -2,7 +2,10 @@
 
 Household Operations Platform — a self-hosted, event-driven system that watches for the small signals of household/personal life (renewing bills, expiring documents, overdue maintenance, buried action items) and routes them to the right person through the right channel, before they become emergencies.
 
-Full design spec and build plan: **[ARCHITECTURE.md](./ARCHITECTURE.md)**. Roadmap and milestone status: **[docs/roadmap.md](./docs/roadmap.md)**.
+Full design spec and build plan: **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
+Modules & features manual: **[docs/CAIRN_MODULES_MANUAL.md](./docs/CAIRN_MODULES_MANUAL.md)**.
+WhatsApp integration & setup guide: **[docs/engineering/WHATSAPP_INTEGRATION_GUIDE.md](./docs/engineering/WHATSAPP_INTEGRATION_GUIDE.md)**.
+Roadmap and milestone status: **[docs/roadmap.md](./docs/roadmap.md)**.
 
 ## Getting started
 

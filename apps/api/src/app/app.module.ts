@@ -3,6 +3,7 @@ import { PrismaModule } from '@cairn/database';
 import { AppConfigModule } from '@cairn/shared-config';
 
 import { AuthModule } from './auth/auth.module';
+import { HouseholdConfigModule } from './config/household-config.module';
 import { DocumentsModule } from './documents/documents.module';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
@@ -22,6 +23,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
     UsersModule,
     AuthModule,
     HouseholdModule,
+    HouseholdConfigModule,
     EventsModule,
     DocumentsModule,
     TasksModule,

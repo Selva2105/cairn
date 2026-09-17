@@ -30,7 +30,9 @@ export class WhatsAppController {
   // Meta's one-time setup handshake.
   @Get()
   verify(@Query() query: VerifyQuery): string {
-    const verifyToken = this.config.get('WHATSAPP_VERIFY_TOKEN');
+    const verifyToken =
+      this.config.get('WHATSAPP_VERIFY_TOKEN') ||
+      process.env['WHATSAPP_VERIFY_TOKEN'];
     if (
       query['hub.mode'] === 'subscribe' &&
       verifyToken &&
@@ -47,7 +49,9 @@ export class WhatsAppController {
     @Req() req: RawBodyRequest<Request>,
     @Headers('x-hub-signature-256') signature?: string,
   ): Promise<{ status: string }> {
-    const appSecret = this.config.get('WHATSAPP_APP_SECRET');
+    const appSecret =
+      this.config.get('WHATSAPP_APP_SECRET') ||
+      process.env['WHATSAPP_APP_SECRET'];
     if (
       !appSecret ||
       !req.rawBody ||

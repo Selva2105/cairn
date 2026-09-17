@@ -6,6 +6,6 @@ import { WhatsAppChannel } from './whatsapp.channel';
 
 @Module({
   providers: [EmailChannel, WhatsAppChannel, NotificationDispatchService],
-  exports: [NotificationDispatchService],
+  exports: [EmailChannel, WhatsAppChannel, NotificationDispatchService],
 })
 export class CairnNotificationsModule {}

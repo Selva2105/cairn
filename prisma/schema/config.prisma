@@ -1,0 +1,19 @@
+model HouseholdConfig {
+  id                  String   @id @default(uuid())
+  householdId         String   @unique
+  currency            String   @default("INR")
+  currencySymbol      String   @default("₹")
+  timezone            String   @default("Asia/Kolkata")
+  documentTypes       String[] @default(["PASSPORT", "NATIONAL_ID", "DRIVERS_LICENSE", "INSURANCE", "VEHICLE_RC", "WARRANTY", "REGISTRATION", "PROPERTY_LEASE", "TAX_RETURN", "MEDICAL", "OTHER"])
+  billReminderDays    Int[]    @default([7, 3, 1])
+  docReminderDays     Int[]    @default([30, 14, 1])
+  digestTime          String   @default("08:00")
+  digestChannel       String   @default("EMAIL")
+  defaultTaskPriority String   @default("MEDIUM")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@map("household_configs")
+}

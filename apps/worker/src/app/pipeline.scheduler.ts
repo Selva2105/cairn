@@ -3,14 +3,16 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { QUEUE_NAMES } from '@cairn/shared-constants';
 import type { Queue } from 'bullmq';
 
-const DAILY_PIPELINE_JOB_ID = 'daily-pipeline-run';
-const DAILY_CRON_PATTERN = '0 3 * * *';
+import { BullmqTaskLogger } from './bullmq-task-logger.service';
+
+const PIPELINE_JOB_ID = 'pipeline-scheduled-scan';
+// Runs every minute so document expirations, bill due dates, and reminders trigger promptly
+// at the exact time of expiry, while EventLog deduplication prevents duplicate notifications.
+const PIPELINE_CRON_PATTERN = '* * * * *';
 
 /**
- * Registers the one canonical repeatable job on boot via BullMQ's Job Scheduler API
- * (bullmq v5.7+) -- `upsertJobScheduler` is idempotent on `DAILY_PIPELINE_JOB_ID`, so a
- * service restart updates the existing schedule instead of adding a duplicate one.
- * See CAIRN_WORKER_ENGINEERING.md §2.
+ * Registers the scheduled pipeline scan job on boot via BullMQ's Job Scheduler API
+ * (bullmq v5.7+) -- `upsertJobScheduler` is idempotent on `PIPELINE_JOB_ID`.
  */
 @Injectable()
 export class PipelineScheduler implements OnModuleInit {
@@ -18,22 +20,25 @@ export class PipelineScheduler implements OnModuleInit {
 
   constructor(
     @InjectQueue(QUEUE_NAMES.RULES_EVALUATION) private readonly queue: Queue,
+    private readonly taskLogger: BullmqTaskLogger,
   ) {}
 
   async onModuleInit(): Promise<void> {
     await this.queue.upsertJobScheduler(
-      DAILY_PIPELINE_JOB_ID,
-      { pattern: DAILY_CRON_PATTERN },
+      PIPELINE_JOB_ID,
+      { pattern: PIPELINE_CRON_PATTERN },
       {
-        name: 'daily-run',
+        name: 'scheduled-pipeline-run',
         opts: {
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
           removeOnComplete: { age: 86400 },
-          removeOnFail: false, // keep failed jobs around for the dead-letter view
+          removeOnFail: false,
         },
       },
     );
-    this.logger.log(`Registered daily pipeline run (${DAILY_CRON_PATTERN})`);
+    this.logger.log(
+      `[${this.taskLogger.formatTime()}] 🕒 SCHEDULER | Registered pipeline scan (${PIPELINE_CRON_PATTERN})`,
+    );
   }
 }

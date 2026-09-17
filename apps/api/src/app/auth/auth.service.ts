@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -6,9 +7,20 @@ import {
 import { PasswordService, TokenService } from '@cairn/auth';
 import type { GoogleProfile } from '@cairn/auth';
 import { PrismaService } from '@cairn/database';
-import { ERROR_CODES, ROLES, type Role } from '@cairn/shared-constants';
+import {
+  buildPasswordResetEmail,
+  NotificationDispatchService,
+} from '@cairn/notifications';
+import {
+  ERROR_CODES,
+  NOTIFICATION_CHANNELS,
+  ROLES,
+  type Role,
+} from '@cairn/shared-constants';
 
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignupDto } from './dto/signup.dto';
 
 export interface AuthTokens {
@@ -26,6 +38,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
+    private readonly notifications: NotificationDispatchService,
   ) {}
 
   async signup(dto: SignupDto): Promise<AuthTokens> {
@@ -79,17 +92,64 @@ export class AuthService {
     );
   }
 
-  async loginWithGoogle(profile: GoogleProfile): Promise<AuthTokens> {
+  async loginWithGoogle(
+    profile: GoogleProfile,
+    inviteToken?: string,
+  ): Promise<AuthTokens> {
+    let invitedHouseholdId: string | null = null;
+    if (inviteToken) {
+      try {
+        const payload = this.tokenService.verifyInviteToken(inviteToken);
+        invitedHouseholdId = payload.householdId;
+      } catch {
+        // Invite token invalid or expired -- continue with normal flow
+      }
+    }
+
     const existingByGoogleId = await this.prisma.user.findUnique({
       where: { googleId: profile.googleId },
     });
 
     if (existingByGoogleId) {
+      if (invitedHouseholdId) {
+        const member = await this.prisma.householdMember.upsert({
+          where: {
+            householdId_userId: {
+              householdId: invitedHouseholdId,
+              userId: existingByGoogleId.id,
+            },
+          },
+          update: {},
+          create: {
+            householdId: invitedHouseholdId,
+            userId: existingByGoogleId.id,
+            role: 'MEMBER',
+          },
+        });
+        return this.issueTokens(
+          existingByGoogleId.id,
+          invitedHouseholdId,
+          toRole(member.role),
+        );
+      }
+
       const membership = await this.prisma.householdMember.findFirst({
         where: { userId: existingByGoogleId.id },
       });
       if (!membership) {
-        throw new UnauthorizedException(ERROR_CODES.HOUSEHOLD_NOT_FOUND);
+        const createdHousehold = await this.prisma.household.create({
+          data: {
+            name: `${existingByGoogleId.name || 'My'}'s Household`,
+            members: {
+              create: { userId: existingByGoogleId.id, role: 'OWNER' },
+            },
+          },
+        });
+        return this.issueTokens(
+          existingByGoogleId.id,
+          createdHousehold.id,
+          ROLES.OWNER,
+        );
       }
       return this.issueTokens(
         existingByGoogleId.id,
@@ -104,13 +164,45 @@ export class AuthService {
     if (existingByEmail) {
       const linked = await this.prisma.user.update({
         where: { id: existingByEmail.id },
-        data: { googleId: profile.googleId },
+        data: {
+          googleId: profile.googleId,
+          emailVerifiedAt: existingByEmail.emailVerifiedAt ?? new Date(),
+        },
       });
+
+      if (invitedHouseholdId) {
+        const member = await this.prisma.householdMember.upsert({
+          where: {
+            householdId_userId: {
+              householdId: invitedHouseholdId,
+              userId: linked.id,
+            },
+          },
+          update: {},
+          create: {
+            householdId: invitedHouseholdId,
+            userId: linked.id,
+            role: 'MEMBER',
+          },
+        });
+        return this.issueTokens(
+          linked.id,
+          invitedHouseholdId,
+          toRole(member.role),
+        );
+      }
+
       const membership = await this.prisma.householdMember.findFirst({
         where: { userId: linked.id },
       });
       if (!membership) {
-        throw new UnauthorizedException(ERROR_CODES.HOUSEHOLD_NOT_FOUND);
+        const createdHousehold = await this.prisma.household.create({
+          data: {
+            name: `${linked.name || 'My'}'s Household`,
+            members: { create: { userId: linked.id, role: 'OWNER' } },
+          },
+        });
+        return this.issueTokens(linked.id, createdHousehold.id, ROLES.OWNER);
       }
       return this.issueTokens(
         linked.id,
@@ -119,17 +211,41 @@ export class AuthService {
       );
     }
 
+    // New user signing up with Google
+    if (invitedHouseholdId) {
+      const user = await this.prisma.$transaction(async (tx) => {
+        const createdUser = await tx.user.create({
+          data: {
+            email: profile.email,
+            name: profile.name,
+            googleId: profile.googleId,
+            emailVerifiedAt: new Date(),
+          },
+        });
+        await tx.householdMember.create({
+          data: {
+            householdId: invitedHouseholdId!,
+            userId: createdUser.id,
+            role: 'MEMBER',
+          },
+        });
+        return createdUser;
+      });
+      return this.issueTokens(user.id, invitedHouseholdId, ROLES.MEMBER);
+    }
+
     const { user, household } = await this.prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
           email: profile.email,
           name: profile.name,
           googleId: profile.googleId,
+          emailVerifiedAt: new Date(),
         },
       });
       const createdHousehold = await tx.household.create({
         data: {
-          name: `${profile.name}'s Household`,
+          name: `${profile.name || 'My'}'s Household`,
           members: { create: { userId: createdUser.id, role: 'OWNER' } },
         },
       });
@@ -215,5 +331,73 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken: issued.token };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (user && user.passwordHash) {
+      const token = this.tokenService.signPasswordResetToken(
+        user.id,
+        user.email,
+      );
+      const appUrl = process.env.WEB_APP_ORIGIN ?? 'http://localhost:4200';
+      const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(token)}`;
+      const { subject, body } = buildPasswordResetEmail({
+        userName: user.name,
+        resetUrl,
+      });
+
+      try {
+        await this.notifications.dispatch(NOTIFICATION_CHANNELS.EMAIL, {
+          to: user.email,
+          subject,
+          body,
+        });
+      } catch (err) {
+        console.error('Failed to send password reset email:', err);
+      }
+    }
+
+    return {
+      message:
+        'If an account exists with this email address, instructions have been sent to reset your password.',
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ status: string }> {
+    let payload: { userId: string; email: string };
+    try {
+      payload = this.tokenService.verifyPasswordResetToken(dto.token);
+    } catch {
+      throw new BadRequestException(
+        'This password reset link is invalid or has expired',
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.userId },
+    });
+    if (!user || user.email !== payload.email) {
+      throw new BadRequestException(
+        'This password reset link is invalid or has expired',
+      );
+    }
+
+    const newHash = await this.passwordService.hash(dto.password);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash },
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    });
+
+    return { status: 'ok' };
   }
 }
