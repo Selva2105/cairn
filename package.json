@@ -2,6 +2,7 @@
   "name": "cairn",
   "version": "0.0.0",
   "license": "MIT",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "prepare": "husky",
     "reset": "pnpm exec nx reset && pnpm dev:down && pnpm dev:up",
