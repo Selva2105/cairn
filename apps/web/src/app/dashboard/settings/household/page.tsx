@@ -168,6 +168,7 @@ export default async function HouseholdSettingsPage() {
                 isConfigured={me.whatsappConfigured}
                 hasPhone={Boolean(me.phone)}
                 userPhone={me.phone}
+                householdId={householdId}
               />
             </CardContent>
           </Card>

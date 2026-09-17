@@ -5,6 +5,10 @@ import type {
   NotificationChannel,
   NotificationPayload,
 } from './notification-channel.interface';
+import {
+  buildWhatsAppMessagePayload,
+  stripHtml,
+} from './whatsapp-payload.builder';
 
 const GRAPH_API_VERSION = 'v21.0';
 
@@ -12,8 +16,11 @@ const GRAPH_API_VERSION = 'v21.0';
 export class WhatsAppChannel implements NotificationChannel {
   readonly key = 'whatsapp';
   private readonly logger = new Logger(WhatsAppChannel.name);
+  private readonly config: AppConfigService;
 
-  constructor(private readonly config: AppConfigService) {}
+  constructor(config: AppConfigService) {
+    this.config = config;
+  }
 
   async send(payload: NotificationPayload): Promise<void> {
     const phoneNumberId =
@@ -28,6 +35,15 @@ export class WhatsAppChannel implements NotificationChannel {
       );
     }
 
+    const formattedBody =
+      payload.body.trim().startsWith(payload.subject) ||
+      payload.body.trim().startsWith(`*${payload.subject}`) ||
+      !payload.subject
+        ? stripHtml(payload.body).trim()
+        : `${payload.subject}\n\n${stripHtml(payload.body).trim()}`;
+
+    const requestBody = buildWhatsAppMessagePayload(payload, formattedBody);
+
     const response = await fetch(
       `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`,
       {
@@ -36,19 +52,7 @@ export class WhatsAppChannel implements NotificationChannel {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: payload.to,
-          type: 'text',
-          text: {
-            body:
-              payload.body.trim().startsWith(payload.subject) ||
-              payload.body.trim().startsWith(`*${payload.subject}`) ||
-              !payload.subject
-                ? stripHtml(payload.body).trim()
-                : `${payload.subject}\n\n${stripHtml(payload.body).trim()}`,
-          },
-        }),
+        body: JSON.stringify(requestBody),
       },
     );
 
@@ -60,8 +64,4 @@ export class WhatsAppChannel implements NotificationChannel {
       );
     }
   }
-}
-
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, '');
 }
