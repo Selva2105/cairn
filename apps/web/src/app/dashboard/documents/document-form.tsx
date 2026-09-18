@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, DateTimePicker, Input, Label } from '@cairn/ui';
-import { FilePlus } from 'lucide-react';
+import { FilePlus, Paperclip, X } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -11,6 +11,9 @@ import { z } from 'zod';
 
 import { ApiError } from '../../../lib/api-error';
 import { browserApiFetch } from '../../../lib/api-client-browser';
+import { formatFileSize } from './documents-client';
+
+const MAX_DOCUMENT_FILE_BYTES = 15 * 1024 * 1024; // matches apps/api's DocumentsController limit
 
 const documentSchema = z.object({
   type: z.string().min(1, 'Document type is required'),
@@ -30,6 +33,8 @@ export function DocumentForm({
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     register,
     control,
@@ -44,15 +49,38 @@ export function DocumentForm({
   const onSubmit = handleSubmit(async (values) => {
     setSubmitting(true);
     try {
-      await browserApiFetch(`/households/${householdId}/documents`, {
-        method: 'POST',
-        body: JSON.stringify({
-          ...values,
-          expiresOn: values.expiresOn.toISOString(),
-        }),
-      });
-      toast.success('Document added');
+      const created = await browserApiFetch<{ id: string }>(
+        `/households/${householdId}/documents`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            ...values,
+            expiresOn: values.expiresOn.toISOString(),
+          }),
+        },
+      );
+      if (file) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          await browserApiFetch(
+            `/households/${householdId}/documents/${created.id}/file`,
+            { method: 'POST', body: formData },
+          );
+          toast.success('Document added with file');
+        } catch (error) {
+          toast.warning(
+            `Document added, but the file upload failed: ${
+              error instanceof ApiError ? error.message : 'unknown error'
+            }. You can retry from Edit.`,
+          );
+        }
+      } else {
+        toast.success('Document added');
+      }
       reset();
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       router.refresh();
     } catch (error) {
       toast.error(
@@ -148,6 +176,66 @@ export function DocumentForm({
             {...register('notes')}
           />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm font-medium">Attach file (optional)</Label>
+        {file ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-secondary/30 p-3">
+            <span className="flex items-center gap-1.5 text-sm min-w-0">
+              <Paperclip className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{file.name}</span>
+              <span className="text-muted-foreground shrink-0">
+                ({formatFileSize(file.size)})
+              </span>
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => {
+                setFile(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+              <span className="sr-only">Remove file</span>
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full justify-center border-dashed"
+          >
+            <Paperclip className="mr-2 h-4 w-4" />
+            Choose a PDF or image
+          </Button>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={(e) => {
+            const picked = e.target.files?.[0];
+            if (!picked) return;
+            if (picked.size > MAX_DOCUMENT_FILE_BYTES) {
+              toast.error(
+                `File is too large (max ${formatFileSize(MAX_DOCUMENT_FILE_BYTES)})`,
+              );
+              e.target.value = '';
+              return;
+            }
+            setFile(picked);
+          }}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          PDF or image, up to {formatFileSize(MAX_DOCUMENT_FILE_BYTES)}. Only
+          members of your household can view it.
+        </p>
       </div>
 
       <div className="pt-2">
