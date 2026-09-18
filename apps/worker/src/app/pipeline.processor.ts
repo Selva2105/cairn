@@ -20,13 +20,40 @@ export class PipelineProcessor extends WorkerHost {
     return this.pipeline.runOnce(job.data?.householdId);
   }
 
+  private isScheduledScan(job: Job): boolean {
+    return (
+      job.name === 'scheduled-pipeline-run' ||
+      (typeof job.id === 'string' && job.id.startsWith('repeat:'))
+    );
+  }
+
+  private hasAction(result?: PipelineRunSummary): boolean {
+    if (!result) return false;
+    return (
+      (result.ingested ?? 0) > 0 ||
+      (result.documentsScanned ?? 0) > 0 ||
+      (result.billsScanned ?? 0) > 0 ||
+      (result.processed ?? 0) > 0 ||
+      (result.notified ?? 0) > 0 ||
+      (result.failedConnectors ?? 0) > 0
+    );
+  }
+
   @OnWorkerEvent('active')
   onActive(job: Job): void {
+    // Suppress periodic idle scan ticks from writing log entries before any action is confirmed
+    if (this.isScheduledScan(job)) {
+      return;
+    }
     this.taskLogger.logActive(QUEUE_NAMES.RULES_EVALUATION, job);
   }
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job, result: PipelineRunSummary): void {
+    // Only write BullMQ logs if an action was actually taken
+    if (this.isScheduledScan(job) && !this.hasAction(result)) {
+      return;
+    }
     this.taskLogger.logCompleted(QUEUE_NAMES.RULES_EVALUATION, job, result);
   }
 

@@ -115,7 +115,40 @@ export class BullmqTaskLogger implements OnModuleInit {
     void this.writeToFile(fileEntry);
   }
 
+  /**
+   * Evaluates if a job result represents an actionable event (non-empty/non-idle).
+   * For pipeline scans, if all counts are 0, no action was taken.
+   */
+  hasAction(result?: unknown): boolean {
+    if (result === undefined || result === null) return true;
+    if (
+      typeof result === 'object' &&
+      result !== null &&
+      'ingested' in result &&
+      'documentsScanned' in result
+    ) {
+      const summary = result as Record<string, number>;
+      return (
+        (summary.ingested ?? 0) > 0 ||
+        (summary.documentsScanned ?? 0) > 0 ||
+        (summary.billsScanned ?? 0) > 0 ||
+        (summary.processed ?? 0) > 0 ||
+        (summary.notified ?? 0) > 0 ||
+        (summary.failedConnectors ?? 0) > 0
+      );
+    }
+    return true;
+  }
+
   logActive(queue: string, job: Job): void {
+    // Suppress periodic idle scan ticks from writing log entries before any action is confirmed
+    const isRepeatScan =
+      job.name === 'scheduled-pipeline-run' ||
+      (typeof job.id === 'string' && job.id.startsWith('repeat:'));
+    if (isRepeatScan) {
+      return;
+    }
+
     const time = this.formatTime();
     const dateTime = this.formatDateTime();
     const attempt = job.attemptsMade + 1;
@@ -127,6 +160,11 @@ export class BullmqTaskLogger implements OnModuleInit {
   }
 
   logCompleted(queue: string, job: Job, result?: unknown): void {
+    // Only write logs if an action was actually taken
+    if (!this.hasAction(result)) {
+      return;
+    }
+
     const time = this.formatTime();
     const dateTime = this.formatDateTime();
     const duration = job.processedOn ? `${Date.now() - job.processedOn}ms` : '';
