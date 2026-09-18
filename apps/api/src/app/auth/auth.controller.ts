@@ -7,6 +7,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Post,
   Req,
   Res,
@@ -35,7 +36,13 @@ const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 @Catch()
 export class OAuthExceptionFilter implements ExceptionFilter {
-  catch(_exception: unknown, host: ArgumentsHost) {
+  private readonly logger = new Logger(OAuthExceptionFilter.name);
+
+  catch(exception: unknown, host: ArgumentsHost) {
+    this.logger.error(
+      'Google SSO guard/filter caught an error',
+      exception as Error,
+    );
     const ctx = host.switchToHttp();
     const req = ctx.getRequest<Request>();
     const res = ctx.getResponse<Response>();
@@ -62,6 +69,8 @@ export class OAuthExceptionFilter implements ExceptionFilter {
 
 @Controller()
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly config: AppConfigService,
@@ -197,7 +206,8 @@ export class AuthController {
       }
 
       return res.redirect(`${appUrl}/dashboard/overview`);
-    } catch {
+    } catch (error) {
+      this.logger.error('Google SSO callback failed', error as Error);
       return res.redirect(`${appUrl}/login?error=sso_failed`);
     }
   }
