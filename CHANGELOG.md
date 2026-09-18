@@ -4,6 +4,8 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-18
+
 ### Added
 
 - M0 scaffold: Nx + pnpm workspace, `apps/{web,api,worker,bot}`, `libs/{domain,auth,rules-engine,notifications,database,ui,connectors/*,shared/*}`, Nx module-boundary enforcement, Docker Compose local infra, Husky/lint-staged/commitlint, CI pipeline.
@@ -21,3 +23,11 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 - Household invite generation and task deletion were checking the JWT's `role` claim, which is scoped to whichever household was active at login/refresh and doesn't reflect a user's role in a _different_ household a route references. Both now check the actual per-household membership row instead.
 - `Dockerfile.{api,worker,bot}`'s runtime stage ran `pnpm install --prod` against a directory with no `package.json`, silently producing an image with no `node_modules`; now copies `node_modules` from the build stage instead. `Dockerfile.web` referenced `.next/standalone` output that was never actually enabled in `next.config.js`. Both found by building/running the images, not just reading them -- see ADR 0008.
+- Cross-domain auth cookies never reached `apps/web`'s server-rendered `getSession()` after Google SSO, silently bouncing every freshly-logged-in user back to `/login` -- fixed by proxying `/api/*` through `apps/web` so the browser only ever talks to one origin; see ADR 0009.
+- `.env.example` had duplicate, conflicting `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET`/`_CALLBACK_URL` entries (the second `GOOGLE_OAUTH_CALLBACK_URL` was missing the `/api` prefix ADR 0009 requires); deduplicated into one consistent block.
+- Render deploy used `SameSite=Lax` cookies and did not force `NODE_ENV=production`, breaking session persistence in production; now forces `NODE_ENV=production` on Render and uses `SameSite=None` (with `Secure`) for cross-site-safe cookies.
+
+### Added (infra)
+
+- `apps/web/src/app/privacy` and `.../terms` -- public privacy policy and terms of service pages, linked from login/signup, needed for Google OAuth consent screen verification.
+- `apps/web/src/app/changelog` -- a public changelog page rendering this file's release history.
