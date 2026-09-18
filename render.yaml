@@ -1,0 +1,53 @@
+# Render Blueprint for apps/api (see ARCHITECTURE.md §18 and docs/adr/0008-deployment-topology.md).
+# In the Render dashboard: New -> Blueprint -> select this repo -> Render finds this file.
+# Every `sync: false` var must be filled in manually in the Render dashboard after the first
+# deploy (Neon/Upstash connection strings and secrets aren't something a Blueprint can know).
+services:
+  - type: web
+    name: cairn-api
+    runtime: docker
+    plan: free
+    dockerfilePath: infra/docker/Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_CALLBACK_URL
+        sync: false
+      - key: COOKIE_DOMAIN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: WEB_APP_ORIGIN
+        sync: false
