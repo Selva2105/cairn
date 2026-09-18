@@ -15,6 +15,10 @@ WORKDIR /app
 RUN addgroup -S cairn && adduser -S cairn -G cairn
 COPY --from=build /workspace/apps/api/dist ./
 COPY --from=build /workspace/node_modules ./node_modules
+# Prisma's native query-engine binary lives outside node_modules, at the generator's custom
+# `output` path (see prisma/schema/schema.prisma) -- webpack only bundles JS, so without this
+# copy the engine .node file never makes it into the image and PrismaClient fails at boot.
+COPY --from=build /workspace/libs/database/src/generated/client ./libs/database/src/generated/client
 USER cairn
 EXPOSE 3000
 CMD ["node", "main.js"]

@@ -12,5 +12,8 @@ WORKDIR /app
 RUN addgroup -S cairn && adduser -S cairn -G cairn
 COPY --from=build /workspace/apps/worker/dist ./
 COPY --from=build /workspace/node_modules ./node_modules
+# See Dockerfile.api for why this is needed -- the native Prisma query-engine binary lives
+# outside node_modules and webpack won't bundle it.
+COPY --from=build /workspace/libs/database/src/generated/client ./libs/database/src/generated/client
 USER cairn
 CMD ["node", "main.js"]
