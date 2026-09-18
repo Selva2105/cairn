@@ -124,8 +124,15 @@ export class AuthController {
       await this.authService.logout(raw);
     }
     const domain = this.config.get('COOKIE_DOMAIN');
-    res.clearCookie(COOKIES.ACCESS_TOKEN, { domain });
-    res.clearCookie(COOKIES.REFRESH_TOKEN, { domain, path: '/api/auth' });
+    const secure = this.config.get('NODE_ENV') === 'production';
+    const sameSite = secure ? 'none' : 'lax';
+    res.clearCookie(COOKIES.ACCESS_TOKEN, { domain, secure, sameSite });
+    res.clearCookie(COOKIES.REFRESH_TOKEN, {
+      domain,
+      secure,
+      sameSite,
+      path: '/api/auth',
+    });
     return { status: 'ok' };
   }
 
@@ -208,17 +215,21 @@ export class AuthController {
   private setAuthCookies(res: Response, tokens: AuthTokens): void {
     const domain = this.config.get('COOKIE_DOMAIN');
     const secure = this.config.get('NODE_ENV') === 'production';
+    // web (Vercel) and api (Render) are different sites in production, so the browser only
+    // sends these cookies back on cross-origin calls under SameSite=None (requires Secure).
+    // Locally, web/api share the "localhost" site (different port only), where Lax still works.
+    const sameSite = secure ? 'none' : 'lax';
     res.cookie(COOKIES.ACCESS_TOKEN, tokens.accessToken, {
       httpOnly: true,
       secure,
-      sameSite: 'lax',
+      sameSite,
       domain,
       maxAge: ACCESS_COOKIE_MAX_AGE_MS,
     });
     res.cookie(COOKIES.REFRESH_TOKEN, tokens.refreshToken, {
       httpOnly: true,
       secure,
-      sameSite: 'lax',
+      sameSite,
       domain,
       // Scoped to the whole /api/auth subtree (not just /refresh) so logout can still read
       // and revoke it. The global prefix means this must include `/api`, not just the bare

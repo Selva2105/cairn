@@ -11,6 +11,11 @@ services:
     dockerContext: .
     healthCheckPath: /api/health
     envVars:
+      # runtime: docker skips Render's native Node buildpack, which is what normally injects
+      # this -- without it, env.schema.ts's NODE_ENV default ('development') silently disables
+      # Secure/SameSite=None cookie behavior needed for the cross-site Vercel <-> Render setup.
+      - key: NODE_ENV
+        value: production
       - key: PORT
         value: 3000
       - key: DATABASE_URL
