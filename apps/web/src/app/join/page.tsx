@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { CairnMark } from '@cairn/ui';
 
 import { ThemeToggle } from '../../components/theme-toggle';
 import { JoinInviteCard } from './join-invite-card';
@@ -18,9 +18,7 @@ export default async function JoinPage({
 
       <div className="w-full max-w-sm flex flex-col items-center gap-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground text-background">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <CairnMark size={40} />
           <h1 className="text-xl font-bold tracking-tight text-foreground">
             Cairn
           </h1>

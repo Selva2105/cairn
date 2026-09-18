@@ -1,5 +1,4 @@
 import {
-  Sparkles,
   ShieldCheck,
   CalendarClock,
   MessageSquare,
@@ -7,6 +6,7 @@ import {
   AlertCircle,
   Users,
 } from 'lucide-react';
+import { CairnMark } from '@cairn/ui';
 
 interface AuthShowcaseProps {
   mode?: 'login' | 'signup';
@@ -17,9 +17,7 @@ export function AuthShowcase({ mode = 'login' }: AuthShowcaseProps) {
     <aside className="relative hidden h-full w-full flex-col justify-between overflow-hidden border-r border-border bg-stone-50/80 dark:bg-card/30 p-8 lg:flex xl:p-14">
       {/* Brand Header */}
       <div className="relative z-10 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Sparkles className="h-5 w-5" />
-        </div>
+        <CairnMark size={40} className="shrink-0" />
         <div>
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight text-foreground">

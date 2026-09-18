@@ -39,6 +39,18 @@
     --ring: 20 62% 44%;
 
     --radius: 0.625rem;
+
+    /* Brand Design Tokens */
+    --color-clay-500: #BD5B2C;
+    --color-clay-400: #D07F4F;
+    --color-moss-500: #4C9651;
+    --color-stone-cream: #FAF8F5;
+    --color-basalt: #191512;
+
+    /* Theme-Aware Cairn Logo Mark Tokens */
+    --bg-surface: #FAF8F5;
+    --icon-stone-base: #191512;
+    --icon-stone-accent: #BD5B2C;
   }
 
   .dark {
@@ -75,6 +87,18 @@
     --border: 20 10% 20%;
     --input: 20 10% 20%;
     --ring: 20 65% 55%;
+
+    /* Brand Design Tokens */
+    --color-clay-500: #BD5B2C;
+    --color-clay-400: #D07F4F;
+    --color-moss-500: #4C9651;
+    --color-stone-cream: #FAF8F5;
+    --color-basalt: #191512;
+
+    /* Dark Mode Cairn Logo Mark Tokens */
+    --bg-surface: #191512;
+    --icon-stone-base: #FAF8F5;
+    --icon-stone-accent: #D07F4F;
   }
 }
 

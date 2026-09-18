@@ -12,9 +12,8 @@ import {
   Command,
   Plus,
   Search,
-  Sparkles,
 } from 'lucide-react';
-import { Badge, Button } from '@cairn/ui';
+import { Badge, Button, CairnMark } from '@cairn/ui';
 import { ThemeToggle } from './theme-toggle';
 import { browserApiFetch } from '../lib/api-client-browser';
 
@@ -60,7 +59,7 @@ export function TopBar() {
           href="/dashboard/overview"
           className="flex items-center gap-1.5 font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <CairnMark size={16} className="shrink-0" />
           <span>Dashboard</span>
         </Link>
         <ChevronRight className="h-3 w-3 opacity-40" />

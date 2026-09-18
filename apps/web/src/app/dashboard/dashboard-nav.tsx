@@ -13,11 +13,10 @@ import {
   Settings,
   ShieldCheck,
   Sliders,
-  Sparkles,
   Users,
   X,
 } from 'lucide-react';
-import { Badge } from '@cairn/ui';
+import { Badge, CairnMark } from '@cairn/ui';
 
 import { ThemeToggle } from '../../components/theme-toggle';
 import { LogoutButton } from './logout-button';
@@ -110,9 +109,7 @@ export function DashboardNav() {
           href="/dashboard/overview"
           className="flex items-center gap-2.5 font-semibold text-foreground tracking-tight"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
-          </div>
+          <CairnMark size={32} />
           <span className="text-base font-semibold">Cairn</span>
         </Link>
         <div className="flex items-center gap-2">
@@ -232,9 +229,7 @@ export function DashboardNav() {
             {/* Workspace / Household Header */}
             <div className="flex items-center justify-between rounded-xl border border-border bg-background p-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-                  C
-                </div>
+                <CairnMark size={32} />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-semibold text-foreground tracking-tight">

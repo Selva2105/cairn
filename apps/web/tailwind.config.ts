@@ -56,9 +56,20 @@ const config: Config = {
           DEFAULT: 'hsl(var(--warning))',
           foreground: 'hsl(var(--warning-foreground))',
         },
-        // raw scales for one-off utility classes, e.g. bg-clay-100
-        clay,
-        moss,
+        // brand scales mapped with CSS custom property fallbacks
+        clay: {
+          ...clay,
+          400: 'var(--color-clay-400, #D07F4F)',
+          500: 'var(--color-clay-500, #BD5B2C)',
+        },
+        moss: {
+          ...moss,
+          500: 'var(--color-moss-500, #4C9651)',
+        },
+        stone: {
+          cream: 'var(--color-stone-cream, #FAF8F5)',
+        },
+        basalt: 'var(--color-basalt, #191512)',
       },
       borderRadius: {
         '2xl': 'calc(var(--radius) + 6px)',

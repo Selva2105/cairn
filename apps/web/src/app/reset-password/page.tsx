@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+import { CairnMark } from '@cairn/ui';
 
 import { ThemeToggle } from '../../components/theme-toggle';
 import { AuthShowcase } from '../../components/auth-showcase';
@@ -24,9 +24,7 @@ export default async function ResetPasswordPage({
         {/* Top bar with quick navigation & theme toggle */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2 lg:invisible">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground ring-1 ring-primary/20">
-              <Sparkles className="h-4 w-4" />
-            </div>
+            <CairnMark size={32} />
             <span className="font-bold tracking-tight text-foreground">
               Cairn
             </span>
