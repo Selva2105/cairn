@@ -55,13 +55,16 @@ export default async function SignupPage({
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Protected by Cairn encryption. By continuing, you agree to our{' '}
-            <span className="text-foreground/80 hover:underline cursor-pointer">
+            <Link href="/terms" className="text-foreground/80 hover:underline">
               Terms
-            </span>{' '}
+            </Link>{' '}
             and{' '}
-            <span className="text-foreground/80 hover:underline cursor-pointer">
+            <Link
+              href="/privacy"
+              className="text-foreground/80 hover:underline"
+            >
               Privacy Policy
-            </span>
+            </Link>
             .
           </p>
         </div>
