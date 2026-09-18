@@ -7,6 +7,7 @@ All notable changes to this project are documented here. Format follows [Keep a 
 ### Added
 
 - Bill/event review queue: a low-confidence extraction from a fuzzy connector (Gmail, Calendar, OCR) no longer notifies the household directly -- `RulesEngineService.evaluate` routes it to `EventLog.needsReview` instead, and a new `/dashboard/review` page lets a household member approve (dispatches normally) or dismiss (drops it silently) it. Closes the confidence-threshold/review-queue gap tracked in `docs/risk-register.md`.
+- `.github/workflows/keep-render-warm.yml`: pings `apps/api`'s `/health` every 10 minutes so Render's free-tier instance doesn't spin down between visits, avoiding the cold-start "loading" delay on the first request after idle time.
 
 ### Fixed
 
