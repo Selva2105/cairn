@@ -1,13 +1,19 @@
-
 model Document {
-  id          String       @id @default(uuid())
-  householdId String
-  type        String
-  label       String
-  expiresOn   DateTime
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id           String   @id @default(uuid())
+  householdId  String
+  type         String
+  label        String
+  expiresOn    DateTime
+  notes        String?
+  // The attached scan/photo, stored in Vercel Blob (private access) -- fileUrl is the blob's
+  // own URL, used as its identifying pathname for later get()/del() calls, not served to the
+  // browser directly. See apps/api/src/app/documents/documents.service.ts.
+  fileUrl      String?
+  fileName     String?
+  fileSize     Int?
+  fileMimeType String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 

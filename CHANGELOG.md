@@ -7,10 +7,12 @@ All notable changes to this project are documented here. Format follows [Keep a 
 ### Added
 
 - Bill/event review queue: a low-confidence extraction from a fuzzy connector (Gmail, Calendar, OCR) no longer notifies the household directly -- `RulesEngineService.evaluate` routes it to `EventLog.needsReview` instead, and a new `/dashboard/review` page lets a household member approve (dispatches normally) or dismiss (drops it silently) it. Closes the confidence-threshold/review-queue gap tracked in `docs/risk-register.md`.
+- Documents page upgrades: an Edit modal (previously the API's `PATCH` had no UI, so renewing meant delete-and-recreate), a one-click Renew action that just bumps the expiry date, and file attachments -- upload a PDF or image (up to 15MB) to a document, stored in a private Vercel Blob store and only downloadable by members of the owning household, via new `POST`/`GET`/`DELETE /households/:householdId/documents/:id/file` endpoints. Requires `BLOB_READ_WRITE_TOKEN` on `apps/api` (see `.env.example`).
 - `.github/workflows/keep-render-warm.yml`: pings `apps/api`'s `/health` every 10 minutes so Render's free-tier instance doesn't spin down between visits, avoiding the cold-start "loading" delay on the first request after idle time.
 
 ### Fixed
 
+- The Documents page's category filter tabs used hardcoded keyword matching, so types like `WARRANTY`, `REGISTRATION`, and `TAX_RETURN` never appeared under any tab except "All Records"; the tabs are now derived from the household's actual configured document types.
 - One malformed signal from a connector (an unparseable email, a bad calendar event) aborted every other signal that connector fetched in the same run; now each signal is normalized independently, and only the bad one is skipped and logged.
 
 ## [0.1.0] - 2026-09-18

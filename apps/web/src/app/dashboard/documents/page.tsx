@@ -46,7 +46,11 @@ export default async function DocumentsPage() {
       />
 
       {/* Interactive Filter Suite & Document Grid */}
-      <DocumentsClient documents={documents} householdId={householdId} />
+      <DocumentsClient
+        documents={documents}
+        householdId={householdId}
+        documentTypes={config.documentTypes}
+      />
     </div>
   );
 }

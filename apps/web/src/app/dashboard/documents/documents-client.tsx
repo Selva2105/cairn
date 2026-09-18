@@ -19,12 +19,16 @@ import {
   FileText,
   Heart,
   Home,
+  Paperclip,
+  Pencil,
   Search,
   Shield,
   X,
 } from 'lucide-react';
 
 import { DocumentDeleteButton } from './document-delete-button';
+import { DocumentEditModal } from './document-edit-modal';
+import { DocumentRenewButton } from './document-renew-button';
 import { ExpiryCountdown } from './expiry-countdown';
 
 export interface DocumentRow {
@@ -33,53 +37,69 @@ export interface DocumentRow {
   label: string;
   expiresOn: string;
   notes: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
+  fileMimeType: string | null;
 }
 
-const CATEGORIES = [
-  { id: 'ALL', label: 'All Records' },
-  { id: 'IDENTITY', label: 'Passports & ID' },
-  { id: 'INSURANCE', label: 'Insurance' },
-  { id: 'HOME', label: 'Home & Lease' },
-  { id: 'HEALTH', label: 'Health & Medical' },
-  { id: 'VEHICLE', label: 'Vehicles' },
-];
+export function documentFileUrl(
+  householdId: string,
+  documentId: string,
+): string {
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
+  return `${apiBaseUrl}/households/${householdId}/documents/${documentId}/file`;
+}
+
+function friendlyTypeLabel(type: string): string {
+  return type
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 export function DocumentsClient({
   documents,
   householdId,
+  documentTypes,
 }: {
   documents: DocumentRow[];
   householdId: string;
+  documentTypes: string[];
 }) {
+  // Category tabs are driven by the household's actual configured document types (plus
+  // whatever appears on existing records but isn't configured anymore) -- previously these
+  // were hardcoded keyword-matched buckets that silently excluded types like WARRANTY or
+  // TAX_RETURN from ever appearing under anything but "All Records".
+  const categories = useMemo(() => {
+    const known = new Set(documentTypes);
+    for (const doc of documents) known.add(doc.type);
+    return [
+      { id: 'ALL', label: 'All Records' },
+      ...Array.from(known).map((type) => ({
+        id: type,
+        label: friendlyTypeLabel(type),
+      })),
+    ];
+  }, [documentTypes, documents]);
+
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'nearest' | 'furthest' | 'az'>(
     'nearest',
   );
   const [inspectDoc, setInspectDoc] = useState<DocumentRow | null>(null);
+  const [editDoc, setEditDoc] = useState<DocumentRow | null>(null);
 
   // Filter & Sort
   const filteredDocuments = useMemo(() => {
     return documents
       .filter((doc) => {
-        // Category filter
-        if (selectedCategory !== 'ALL') {
-          const typeUpper = doc.type.toUpperCase();
-          const matches =
-            (selectedCategory === 'IDENTITY' &&
-              (typeUpper.includes('PASSPORT') ||
-                typeUpper.includes('ID') ||
-                typeUpper.includes('LICENSE'))) ||
-            (selectedCategory === 'INSURANCE' && typeUpper.includes('INSUR')) ||
-            (selectedCategory === 'HOME' &&
-              (typeUpper.includes('HOME') ||
-                typeUpper.includes('LEASE') ||
-                typeUpper.includes('RENT'))) ||
-            (selectedCategory === 'HEALTH' &&
-              (typeUpper.includes('HEALTH') || typeUpper.includes('MED'))) ||
-            (selectedCategory === 'VEHICLE' &&
-              (typeUpper.includes('CAR') || typeUpper.includes('VEHICLE')));
-          if (!matches) return false;
+        // Category filter -- exact match against the document's own type
+        if (selectedCategory !== 'ALL' && doc.type !== selectedCategory) {
+          return false;
         }
 
         // Search query filter
@@ -183,7 +203,7 @@ export function DocumentsClient({
 
         {/* Bottom: Category Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-border pt-3">
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
               <button
@@ -295,23 +315,56 @@ export function DocumentsClient({
                       {doc.notes}
                     </div>
                   )}
+
+                  {doc.fileUrl && (
+                    <a
+                      href={documentFileUrl(householdId, doc.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs text-primary hover:underline w-fit"
+                    >
+                      <Paperclip className="h-3.5 w-3.5" />
+                      <span className="truncate max-w-[10rem]">
+                        {doc.fileName ?? 'View attachment'}
+                      </span>
+                    </a>
+                  )}
                 </CardContent>
 
-                <CardFooter className="pt-2 border-t border-border/40 flex items-center justify-between">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => setInspectDoc(doc)}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    <span>Inspect</span>
-                  </Button>
-                  <DocumentDeleteButton
-                    householdId={householdId}
-                    documentId={doc.id}
-                    label={doc.label}
-                  />
+                <CardFooter className="pt-2 border-t border-border/40 flex items-center justify-between flex-wrap gap-1">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setInspectDoc(doc)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>Inspect</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => setEditDoc(doc)}
+                      title="Edit document"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <DocumentRenewButton
+                      householdId={householdId}
+                      documentId={doc.id}
+                      label={doc.label}
+                    />
+                    <DocumentDeleteButton
+                      householdId={householdId}
+                      documentId={doc.id}
+                      label={doc.label}
+                    />
+                  </div>
                 </CardFooter>
               </Card>
             );
@@ -388,20 +441,76 @@ export function DocumentsClient({
                   No notes recorded for this document.
                 </div>
               )}
+
+              <div className="flex flex-col gap-1.5 rounded-xl p-3 bg-secondary/30 border border-border/40">
+                <span className="text-muted-foreground font-medium">
+                  Attached file
+                </span>
+                {inspectDoc.fileUrl ? (
+                  <a
+                    href={documentFileUrl(householdId, inspectDoc.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-sm text-primary hover:underline w-fit"
+                  >
+                    <Paperclip className="h-3.5 w-3.5" />
+                    {inspectDoc.fileName ?? 'View attachment'}
+                    {inspectDoc.fileSize && (
+                      <span className="text-muted-foreground">
+                        ({formatFileSize(inspectDoc.fileSize)})
+                      </span>
+                    )}
+                  </a>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">
+                    No file attached -- add one from Edit.
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="pt-4 border-t border-border/50 flex justify-between items-center">
-              <DocumentDeleteButton
-                householdId={householdId}
-                documentId={inspectDoc.id}
-                label={inspectDoc.label}
-              />
-              <Button size="sm" onClick={() => setInspectDoc(null)}>
-                Close
-              </Button>
+              <div className="flex items-center gap-1">
+                <DocumentDeleteButton
+                  householdId={householdId}
+                  documentId={inspectDoc.id}
+                  label={inspectDoc.label}
+                />
+                <DocumentRenewButton
+                  householdId={householdId}
+                  documentId={inspectDoc.id}
+                  label={inspectDoc.label}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditDoc(inspectDoc);
+                    setInspectDoc(null);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                  Edit
+                </Button>
+                <Button size="sm" onClick={() => setInspectDoc(null)}>
+                  Close
+                </Button>
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 4. Edit Modal */}
+      {editDoc && (
+        <DocumentEditModal
+          householdId={householdId}
+          documentTypes={documentTypes}
+          document={editDoc}
+          onClose={() => setEditDoc(null)}
+        />
       )}
     </div>
   );
@@ -432,4 +541,10 @@ function formatExpiryDateTime(dateIso: string): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

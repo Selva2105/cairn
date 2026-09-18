@@ -56,3 +56,5 @@ services:
         sync: false
       - key: WEB_APP_ORIGIN
         sync: false
+      - key: BLOB_READ_WRITE_TOKEN
+        sync: false
