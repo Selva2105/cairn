@@ -13,6 +13,10 @@ import { matchMaintenanceKeyword } from './match-maintenance-keyword';
 
 interface CalendarCredentials {
   accessToken: string;
+  refreshToken?: string;
+  clientId?: string;
+  clientSecret?: string;
+  expiryDate?: number;
   syncToken?: string; // from a prior run's response -- see the note on write-back below
 }
 
@@ -36,8 +40,19 @@ export class CalendarConnector implements Connector {
       );
     }
 
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: credentials.accessToken });
+    const auth = new google.auth.OAuth2(
+      credentials.clientId,
+      credentials.clientSecret,
+    );
+    auth.setCredentials({
+      access_token: credentials.accessToken,
+      ...(credentials.refreshToken
+        ? { refresh_token: credentials.refreshToken }
+        : {}),
+      ...(credentials.expiryDate
+        ? { expiry_date: credentials.expiryDate }
+        : {}),
+    });
     const calendar = google.calendar({ version: 'v3', auth });
 
     const list = await calendar.events.list({

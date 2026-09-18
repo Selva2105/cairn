@@ -17,6 +17,6 @@ import { PipelineService } from './pipeline.service';
     BillDueScannerService,
     PipelineService,
   ],
-  exports: [PipelineService],
+  exports: [PipelineService, ConnectorRegistryService, PipelineEventsService],
 })
 export class CairnPipelineModule {}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, Sliders, Users } from 'lucide-react';
+import { Plug, Settings, Sliders, Users } from 'lucide-react';
 
 export function SettingsTabs() {
   const pathname = usePathname();
@@ -17,6 +17,11 @@ export function SettingsTabs() {
       href: '/dashboard/settings/household',
       label: 'Household & Bot',
       icon: Users,
+    },
+    {
+      href: '/dashboard/settings/integrations',
+      label: 'Integrations',
+      icon: Plug,
     },
     {
       href: '/dashboard/settings/preferences',

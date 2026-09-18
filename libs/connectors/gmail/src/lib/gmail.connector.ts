@@ -13,6 +13,10 @@ import { parseBillEmail } from './parse-bill-email';
 
 interface GmailCredentials {
   accessToken: string;
+  refreshToken?: string;
+  clientId?: string;
+  clientSecret?: string;
+  expiryDate?: number;
 }
 
 export class GmailConnector implements Connector {
@@ -27,8 +31,19 @@ export class GmailConnector implements Connector {
       );
     }
 
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: credentials.accessToken });
+    const auth = new google.auth.OAuth2(
+      credentials.clientId,
+      credentials.clientSecret,
+    );
+    auth.setCredentials({
+      access_token: credentials.accessToken,
+      ...(credentials.refreshToken
+        ? { refresh_token: credentials.refreshToken }
+        : {}),
+      ...(credentials.expiryDate
+        ? { expiry_date: credentials.expiryDate }
+        : {}),
+    });
     const gmail = google.gmail({ version: 'v1', auth });
 
     const list = await gmail.users.messages.list({

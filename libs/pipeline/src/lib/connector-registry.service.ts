@@ -43,4 +43,34 @@ export class ConnectorRegistryService {
     }
     return enabled;
   }
+
+  async getSingleConnector(
+    householdId: string,
+    key: string,
+  ): Promise<EnabledConnector | null> {
+    const config = await this.prisma.connectorConfig.findFirst({
+      where: {
+        householdId,
+        key: key as any,
+        enabled: true,
+      },
+    });
+
+    if (!config) return null;
+
+    const factory = CONNECTOR_FACTORIES[config.key];
+    if (!factory) return null;
+
+    const context: ConnectorContext = {
+      householdId,
+      enabled: config.enabled,
+    };
+    if (config.credentials) {
+      context.credentials = config.credentials as Record<string, unknown>;
+    }
+    if (config.lastRunAt) {
+      context.lastRunAt = config.lastRunAt;
+    }
+    return { connector: factory(), context };
+  }
 }
