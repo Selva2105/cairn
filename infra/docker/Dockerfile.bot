@@ -10,7 +10,7 @@ RUN pnpm exec nx build bot
 FROM node:24-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S cairn && adduser -S cairn -G cairn
-COPY --from=build /workspace/dist/apps/bot ./
+COPY --from=build /workspace/apps/bot/dist ./
 COPY --from=build /workspace/node_modules ./node_modules
 USER cairn
 EXPOSE 3001

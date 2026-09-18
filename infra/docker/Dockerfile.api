@@ -13,7 +13,7 @@ RUN pnpm exec nx build api
 FROM node:24-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S cairn && adduser -S cairn -G cairn
-COPY --from=build /workspace/dist/apps/api ./
+COPY --from=build /workspace/apps/api/dist ./
 COPY --from=build /workspace/node_modules ./node_modules
 USER cairn
 EXPOSE 3000

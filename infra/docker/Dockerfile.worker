@@ -10,7 +10,7 @@ RUN pnpm exec nx build worker
 FROM node:24-alpine AS runtime
 WORKDIR /app
 RUN addgroup -S cairn && adduser -S cairn -G cairn
-COPY --from=build /workspace/dist/apps/worker ./
+COPY --from=build /workspace/apps/worker/dist ./
 COPY --from=build /workspace/node_modules ./node_modules
 USER cairn
 CMD ["node", "main.js"]

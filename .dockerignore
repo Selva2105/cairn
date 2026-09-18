@@ -1,0 +1,16 @@
+# Keeps local build artifacts/caches out of the Docker build context. Without this, a local
+# .nx cache or dist/ leftover from running Nx commands on the host gets copied into the image
+# and can make `nx build` inside the container behave differently than a clean CI/Render build.
+node_modules
+dist
+tmp
+out-tsc
+.nx
+.git
+logs
+*.log
+.env
+.env.local
+.vscode
+.idea
+coverage
