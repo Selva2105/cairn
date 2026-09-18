@@ -4,6 +4,14 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- Bill/event review queue: a low-confidence extraction from a fuzzy connector (Gmail, Calendar, OCR) no longer notifies the household directly -- `RulesEngineService.evaluate` routes it to `EventLog.needsReview` instead, and a new `/dashboard/review` page lets a household member approve (dispatches normally) or dismiss (drops it silently) it. Closes the confidence-threshold/review-queue gap tracked in `docs/risk-register.md`.
+
+### Fixed
+
+- One malformed signal from a connector (an unparseable email, a bad calendar event) aborted every other signal that connector fetched in the same run; now each signal is normalized independently, and only the bad one is skipped and logged.
+
 ## [0.1.0] - 2026-09-18
 
 ### Added

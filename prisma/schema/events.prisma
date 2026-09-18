@@ -14,11 +14,16 @@ model EventLog {
   dedupeKey   String          @unique // the idempotency guarantee from §8 of the architecture guide lives here
   occurredAt  DateTime
   processedAt DateTime?
+  // Set when a fuzzy connector's extraction confidence is 'low' (payload.confidence) --
+  // the pipeline holds the event out of the normal notify flow until a household member
+  // approves or dismisses it. See docs/adr and libs/domain events.ts's confidence comment.
+  needsReview Boolean         @default(false)
   createdAt   DateTime        @default(now())
 
   household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
   notifications Notification[]
 
   @@index([householdId, type])
+  @@index([householdId, needsReview])
   @@map("event_log")
 }

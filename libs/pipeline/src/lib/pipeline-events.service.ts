@@ -81,15 +81,48 @@ export class PipelineEventsService {
 
   listPending(householdId?: string): Promise<PendingEvent[]> {
     return this.prisma.eventLog.findMany({
-      where: { processedAt: null, ...(householdId ? { householdId } : {}) },
+      where: {
+        processedAt: null,
+        needsReview: false,
+        ...(householdId ? { householdId } : {}),
+      },
       ...pendingEventWithHousehold,
+    });
+  }
+
+  /**
+   * Events a fuzzy connector flagged as low-confidence, awaiting a household member's
+   * approve/dismiss decision. See `RulesEngineService.evaluate`'s confidence gate.
+   */
+  listNeedingReview(householdId: string): Promise<PendingEvent[]> {
+    return this.prisma.eventLog.findMany({
+      where: { householdId, needsReview: true, processedAt: null },
+      ...pendingEventWithHousehold,
+      orderBy: { occurredAt: 'desc' },
+    });
+  }
+
+  getPendingReviewEvent(
+    householdId: string,
+    eventId: string,
+  ): Promise<PendingEvent | null> {
+    return this.prisma.eventLog.findFirst({
+      where: { id: eventId, householdId, needsReview: true },
+      ...pendingEventWithHousehold,
+    });
+  }
+
+  flagForReview(eventId: string): Promise<unknown> {
+    return this.prisma.eventLog.update({
+      where: { id: eventId },
+      data: { needsReview: true },
     });
   }
 
   markProcessed(eventId: string): Promise<unknown> {
     return this.prisma.eventLog.update({
       where: { id: eventId },
-      data: { processedAt: new Date() },
+      data: { processedAt: new Date(), needsReview: false },
     });
   }
 

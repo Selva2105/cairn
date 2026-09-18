@@ -23,6 +23,6 @@ export interface RuleDefinition {
   then: Array<{
     action: 'notify';
     channel: NotificationChannelName;
-    priority: RuleAction['priority'];
+    priority: Extract<RuleAction, { action: 'notify' }>['priority'];
   }>;
 }

@@ -24,6 +24,13 @@ export class RulesEngineService {
     event: DomainEvent,
     configuredRules: RuleDefinition[] = [],
   ): RuleAction[] {
+    // A fuzzy connector (Gmail/Calendar heuristic parsing, OCR) flagged this extraction as
+    // low-confidence -- hold it for a household member to approve/dismiss instead of
+    // notifying on data that might be wrong, regardless of the household's own rules.
+    if (event.confidence === 'low') {
+      return [{ action: 'review' }];
+    }
+
     if (configuredRules.length > 0) {
       return configuredRules.flatMap((rule) => evaluateRule(rule, event));
     }

@@ -12,6 +12,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  ShieldQuestion,
   Sliders,
   Users,
   X,
@@ -41,6 +42,12 @@ const MAIN_NAV = [
     label: 'Automations',
     icon: Sliders,
     badge: 'Active',
+  },
+  {
+    href: '/dashboard/review',
+    label: 'Needs Review',
+    icon: ShieldQuestion,
+    badge: null,
   },
 ];
 
