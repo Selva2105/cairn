@@ -23,6 +23,7 @@ import { AppConfigService } from '@cairn/shared-config';
 import { API_ROUTES, COOKIES } from '@cairn/shared-constants';
 import type { Request, Response } from 'express';
 
+import { ConnectorsService } from '../connectors/connectors.service';
 import { AuthService, type AuthTokens } from './auth.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -36,8 +37,25 @@ const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export class OAuthExceptionFilter implements ExceptionFilter {
   catch(_exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
+    const req = ctx.getRequest<Request>();
     const res = ctx.getResponse<Response>();
     const appUrl = process.env.WEB_APP_ORIGIN ?? 'http://localhost:4200';
+
+    if (typeof req.query?.state === 'string') {
+      try {
+        const decoded = JSON.parse(
+          Buffer.from(req.query.state, 'base64url').toString('utf-8'),
+        );
+        if (decoded.connectorKey) {
+          return res.redirect(
+            `${appUrl}/dashboard/settings/integrations?error=oauth_denied`,
+          );
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     return res.redirect(`${appUrl}/login?error=sso_failed`);
   }
 }
@@ -47,6 +65,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly config: AppConfigService,
+    private readonly connectorsService: ConnectorsService,
   ) {}
 
   @Post(API_ROUTES.AUTH.SIGNUP)
@@ -135,6 +154,20 @@ export class AuthController {
           const decoded = JSON.parse(
             Buffer.from(req.query.state, 'base64url').toString('utf-8'),
           );
+
+          if (decoded.connectorKey && decoded.householdId) {
+            await this.connectorsService.saveGoogleTokens({
+              householdId: decoded.householdId,
+              connectorKey: decoded.connectorKey,
+              accessToken: profile.accessToken,
+              refreshToken: profile.refreshToken,
+              email: profile.email,
+            });
+            return res.redirect(
+              `${appUrl}/dashboard/settings/integrations?connected=${decoded.connectorKey.toLowerCase()}`,
+            );
+          }
+
           if (typeof decoded.token === 'string') {
             inviteToken = decoded.token;
           }

@@ -44,15 +44,72 @@ export class ConnectorsService {
   ) {}
 
   private getCallbackUrl(): string {
-    const authCallbackUrl = this.config.get('GOOGLE_OAUTH_CALLBACK_URL');
-    try {
-      const url = new URL(authCallbackUrl);
-      url.pathname = '/api/connectors/google/callback';
-      url.search = '';
-      return url.toString();
-    } catch {
-      return 'http://localhost:3000/api/connectors/google/callback';
+    return this.config.get('GOOGLE_OAUTH_CALLBACK_URL');
+  }
+
+  async saveGoogleTokens(params: {
+    householdId: string;
+    connectorKey: 'GMAIL' | 'CALENDAR' | 'ALL';
+    accessToken?: string | undefined;
+    refreshToken?: string | undefined;
+    email?: string | null | undefined;
+  }): Promise<void> {
+    const credentialsData: Record<string, unknown> = {
+      accessToken: params.accessToken,
+      email: params.email ?? null,
+      clientId: this.config.get('GOOGLE_OAUTH_CLIENT_ID'),
+      clientSecret: this.config.get('GOOGLE_OAUTH_CLIENT_SECRET'),
+    };
+    if (params.refreshToken) {
+      credentialsData.refreshToken = params.refreshToken;
     }
+
+    const keysToUpsert: ConnectorKey[] =
+      params.connectorKey === 'ALL'
+        ? [ConnectorKey.GMAIL, ConnectorKey.CALENDAR]
+        : [params.connectorKey as ConnectorKey];
+
+    for (const key of keysToUpsert) {
+      const existing = await this.prisma.connectorConfig.findUnique({
+        where: {
+          householdId_key: {
+            householdId: params.householdId,
+            key,
+          },
+        },
+      });
+
+      const existingCreds =
+        (existing?.credentials as Record<string, unknown>) ?? {};
+
+      if (!credentialsData.refreshToken && existingCreds.refreshToken) {
+        credentialsData.refreshToken = existingCreds.refreshToken;
+      }
+
+      await this.prisma.connectorConfig.upsert({
+        where: {
+          householdId_key: {
+            householdId: params.householdId,
+            key,
+          },
+        },
+        create: {
+          householdId: params.householdId,
+          key,
+          enabled: true,
+          credentials: credentialsData as any,
+        },
+        update: {
+          enabled: true,
+          credentials: credentialsData as any,
+          updatedAt: new Date(),
+        },
+      });
+    }
+
+    this.logger.log(
+      `Saved Google ${params.connectorKey} credentials for household ${params.householdId} (${params.email})`,
+    );
   }
 
   private createOAuth2Client() {

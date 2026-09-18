@@ -7,6 +7,8 @@ export interface GoogleProfile {
   googleId: string;
   email: string;
   name: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 @Injectable()
@@ -21,8 +23,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   }
 
   validate(
-    _accessToken: string,
-    _refreshToken: string,
+    accessToken: string,
+    refreshToken: string,
     profile: Profile,
     done: VerifyCallback,
   ): void {
@@ -38,6 +40,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       googleId: profile.id,
       email,
       name: profile.displayName,
+      accessToken,
+      refreshToken,
     };
     done(null, googleProfile);
   }
