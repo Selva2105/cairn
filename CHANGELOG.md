@@ -6,12 +6,17 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ### Added
 
+- `pnpm db:seed --email <you>`: loads a household with demo data for every feature (documents in every expiry state, tasks, bills, automation rules, connector rows, alert history including a failed one, detected events, and low-confidence items for Needs Review). Targets the local database by default, needs `--remote` for the deployed one, and supports `--dry-run` (full run, rolled back), `--reset` and `--with-member`. See `scripts/seed.mts`.
+- Dashboard overview rebuilt around what to do next: a "Needs your attention" list (failed alerts, items awaiting review, expired/expiring documents, bills, overdue tasks), a setup checklist for new households, a plain-language log of alerts sent and things found, upcoming bills, a "Run check now" button, and a status badge based on real delivery results instead of a hardcoded "System Operational".
+- Automations: rules can be paused/resumed, are named in plain language ("Start alerting 60 days before a document expires"), reject duplicates, and the page now explains how rules and Preferences reminder days work together.
 - Bill/event review queue: a low-confidence extraction from a fuzzy connector (Gmail, Calendar, OCR) no longer notifies the household directly -- `RulesEngineService.evaluate` routes it to `EventLog.needsReview` instead, and a new `/dashboard/review` page lets a household member approve (dispatches normally) or dismiss (drops it silently) it. Closes the confidence-threshold/review-queue gap tracked in `docs/risk-register.md`.
 - Documents page upgrades: an Edit modal (previously the API's `PATCH` had no UI, so renewing meant delete-and-recreate), a one-click Renew action that just bumps the expiry date, and file attachments -- upload a PDF or image (up to 15MB) to a document, stored in a private Vercel Blob store and only downloadable by members of the owning household, via new `POST`/`GET`/`DELETE /households/:householdId/documents/:id/file` endpoints. Requires `BLOB_READ_WRITE_TOKEN` on `apps/api` (see `.env.example`).
 - `.github/workflows/keep-render-warm.yml`: pings `apps/api`'s `/health` every 10 minutes so Render's free-tier instance doesn't spin down between visits, avoiding the cold-start "loading" delay on the first request after idle time.
 
 ### Fixed
 
+- Automation rules could not start alerting earlier than the Preferences reminder days: a "60 days before" rule never fired at 60 days because the daily scanner only created reminders for the largest configured window (default 30). Active rule thresholds are now merged into the document and bill scan windows.
+- The dashboard hardcoded the daily digest time, the currency symbol and the greeting ("Household!"); it now uses your name, currency and timezone, and states the real schedule (03:00 UTC daily).
 - The Documents page's category filter tabs used hardcoded keyword matching, so types like `WARRANTY`, `REGISTRATION`, and `TAX_RETURN` never appeared under any tab except "All Records"; the tabs are now derived from the household's actual configured document types.
 - One malformed signal from a connector (an unparseable email, a bad calendar event) aborted every other signal that connector fetched in the same run; now each signal is normalized independently, and only the bad one is skipped and logged.
 

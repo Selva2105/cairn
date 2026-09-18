@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge, Button } from '@cairn/ui';
-import { Sliders, Trash2 } from 'lucide-react';
+import { Pause, Play, Sliders, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '../../../lib/api-error';
@@ -14,14 +14,34 @@ export function RuleRow({
   ruleId,
   name,
   isActive,
+  days,
 }: {
   householdId: string;
   ruleId: string;
   name: string;
   isActive: boolean;
+  days: number | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+
+  const toggle = async () => {
+    setBusy(true);
+    try {
+      await browserApiFetch(`/households/${householdId}/rules/${ruleId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: !isActive }),
+      });
+      toast.success(isActive ? 'Rule paused' : 'Rule resumed');
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof ApiError ? error.message : 'Failed to update rule',
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const remove = async () => {
     setBusy(true);
@@ -45,12 +65,41 @@ export function RuleRow({
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
           <Sliders className="h-3.5 w-3.5" />
         </div>
-        <p className="text-sm font-medium text-foreground">{name}</p>
+        <div className="flex flex-col min-w-0">
+          <p
+            className={`text-sm font-medium ${
+              isActive ? 'text-foreground' : 'text-muted-foreground'
+            }`}
+          >
+            {name}
+          </p>
+          {days !== null && (
+            <span className="text-[11px] text-muted-foreground">
+              First alert {days} days ahead, then on your Preferences reminder
+              schedule
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Badge variant={isActive ? 'success' : 'secondary'}>
-          {isActive ? 'Active' : 'Inactive'}
+          {isActive ? 'Active' : 'Paused'}
         </Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          onClick={toggle}
+          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+          title={isActive ? 'Pause rule' : 'Resume rule'}
+        >
+          {isActive ? (
+            <Pause className="h-3.5 w-3.5" />
+          ) : (
+            <Play className="h-3.5 w-3.5" />
+          )}
+          <span className="sr-only">{isActive ? 'Pause' : 'Resume'}</span>
+        </Button>
         <Button
           variant="ghost"
           size="sm"

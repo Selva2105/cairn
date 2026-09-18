@@ -7,6 +7,7 @@ import { EVENT_TYPES } from '@cairn/shared-constants';
 import { hashDedupeKey } from '@cairn/shared-utils';
 
 import { PipelineEventsService } from './pipeline-events.service';
+import { mergeReminderDays, ruleThresholds } from './reminder-days';
 
 const DEFAULT_BILL_REMINDER_DAYS = [7, 3, 1];
 
@@ -50,7 +51,14 @@ export class BillDueScannerService {
           ? household.config.billReminderDays
           : DEFAULT_BILL_REMINDER_DAYS;
 
-      const sortedDays = [...rawReminderDays].sort((a, b) => b - a);
+      // Active rules' "notify within N days" thresholds also become reminder windows --
+      // otherwise a 60-day rule could never fire before the scanner's own largest window.
+      const sortedDays = mergeReminderDays(
+        rawReminderDays,
+        ruleThresholds(
+          await this.events.getActiveRules(household.id, 'BILL_DETECTED'),
+        ),
+      );
       const maxLookahead = sortedDays[0] ?? 7;
 
       const lookaheadDate = new Date(

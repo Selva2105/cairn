@@ -25,6 +25,7 @@
     "db:migrate": "prisma migrate dev --schema=prisma/schema",
     "db:migrate:name": "prisma migrate dev --schema=prisma/schema --name",
     "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema",
+    "db:seed": "node scripts/seed.mts",
     "db:migrate:status": "prisma migrate status --schema=prisma/schema",
     "db:migrate:reset": "prisma migrate reset --schema=prisma/schema",
     "db:studio": "prisma studio --schema=prisma/schema"

@@ -19,13 +19,24 @@ import { ApiError } from '../../../lib/api-error';
 import { browserApiFetch } from '../../../lib/api-client-browser';
 
 const EVENT_TYPES = [
-  { value: 'BillDetected', label: 'Bill detected', field: 'payload.dueDate' },
+  {
+    value: 'BillDetected',
+    label: 'A bill is due',
+    field: 'payload.dueDate',
+    phrase: 'a bill is due',
+  },
   {
     value: 'DocumentExpiring',
-    label: 'Document expiring',
+    label: 'A document expires',
     field: 'payload.expiresOn',
+    phrase: 'a document expires',
   },
-  { value: 'MaintenanceDue', label: 'Maintenance due', field: 'payload.dueOn' },
+  {
+    value: 'MaintenanceDue',
+    label: 'Maintenance is due (from your calendar)',
+    field: 'payload.dueOn',
+    phrase: 'maintenance is due',
+  },
 ] as const;
 
 const TEMPLATES = [
@@ -59,7 +70,13 @@ const TEMPLATES = [
   },
 ];
 
-export function RuleForm({ householdId }: { householdId: string }) {
+export function RuleForm({
+  householdId,
+  existingNames,
+}: {
+  householdId: string;
+  existingNames: string[];
+}) {
   const router = useRouter();
   const [eventType, setEventType] =
     useState<(typeof EVENT_TYPES)[number]['value']>('DocumentExpiring');
@@ -80,13 +97,19 @@ export function RuleForm({ householdId }: { householdId: string }) {
     const lte = Number(days);
     if (!Number.isFinite(lte) || lte <= 0) return;
 
-    const field = EVENT_TYPES.find((e) => e.value === eventType)?.field;
+    const typeInfo = EVENT_TYPES.find((e) => e.value === eventType);
+    const field = typeInfo?.field;
+    const name = `Start alerting ${lte} days before ${typeInfo?.phrase}`;
+    if (existingNames.includes(name)) {
+      toast.error('You already have this rule');
+      return;
+    }
     setSubmitting(true);
     try {
       await browserApiFetch(`/households/${householdId}/rules`, {
         method: 'POST',
         body: JSON.stringify({
-          name: `Notify within ${lte} days (${eventType})`,
+          name,
           eventType,
           definition: {
             id: `${eventType.toLowerCase()}-${lte}d`,
@@ -185,7 +208,7 @@ export function RuleForm({ householdId }: { householdId: string }) {
               htmlFor="eventType"
               className="text-xs font-medium text-foreground"
             >
-              Trigger Event
+              When
             </Label>
             <select
               id="eventType"
@@ -212,7 +235,7 @@ export function RuleForm({ householdId }: { householdId: string }) {
               htmlFor="days"
               className="text-xs font-medium text-foreground"
             >
-              Threshold (Days Prior)
+              Start alerting (days before)
             </Label>
             <Input
               id="days"
@@ -250,7 +273,7 @@ export function RuleForm({ householdId }: { householdId: string }) {
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 text-[10px] font-bold">
               2
             </span>
-            <span>Within {days} days</span>
+            <span>{days} days before</span>
           </div>
 
           <ArrowRight className="hidden sm:inline h-3.5 w-3.5 text-muted-foreground" />
@@ -260,7 +283,7 @@ export function RuleForm({ householdId }: { householdId: string }) {
               3
             </span>
             <Bell className="h-3 w-3" />
-            <span>Dispatch Automated Alert</span>
+            <span>Alert your household</span>
           </div>
         </div>
       </form>

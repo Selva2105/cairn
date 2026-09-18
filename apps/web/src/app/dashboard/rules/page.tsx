@@ -17,6 +17,7 @@ interface RuleRowData {
   id: string;
   name: string;
   isActive: boolean;
+  definition: { when?: { daysUntil?: { lte?: number } } } | null;
 }
 
 export default async function RulesPage() {
@@ -36,15 +37,16 @@ export default async function RulesPage() {
             Automations & Rules
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Customize alert thresholds, expiration early warnings, and automated
-            pipelines.
+            Decide how early Cairn starts warning you about expiring documents,
+            due bills, and upcoming maintenance.
           </p>
         </div>
         <Badge
           variant="secondary"
           className="font-mono text-xs hidden sm:inline-flex"
         >
-          {rules.length} {rules.length === 1 ? 'rule' : 'rules'} active
+          {rules.filter((r) => r.isActive).length} of {rules.length}{' '}
+          {rules.length === 1 ? 'rule' : 'rules'} active
         </Badge>
       </div>
 
@@ -65,12 +67,17 @@ export default async function RulesPage() {
             </span>
           </div>
           <CardDescription className="text-xs">
-            Override the default 30-day warning window with bespoke thresholds
-            per household stream.
+            Once a day Cairn checks your documents and bills. It alerts your
+            household when something is inside a warning window: the reminder
+            days in Preferences (default 30, 14 and 1 days for documents), plus
+            the earlier start dates you add here. Each alert goes out once.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <RuleForm householdId={householdId} />
+          <RuleForm
+            householdId={householdId}
+            existingNames={rules.map((rule) => rule.name)}
+          />
 
           <div className="pt-2 border-t border-border/40">
             <div className="flex items-center justify-between mb-3">
@@ -78,7 +85,7 @@ export default async function RulesPage() {
                 Configured Custom Rules ({rules.length})
               </h3>
               <span className="text-[11px] text-muted-foreground">
-                Default fallback is 30 days
+                Without rules, Preferences reminder days apply
               </span>
             </div>
 
@@ -88,11 +95,12 @@ export default async function RulesPage() {
                   <Sliders className="h-5 w-5 opacity-60" />
                 </div>
                 <p className="text-xs font-semibold text-foreground">
-                  Using default thresholds
+                  Using your Preferences reminder days
                 </p>
                 <p className="text-[11px] text-muted-foreground max-w-sm mt-0.5">
-                  No custom notification rules configured yet. All upcoming
-                  renewals and bills notify on the standard 30-day window.
+                  No custom rules yet. Documents alert at 30, 14 and 1 days
+                  before expiry and bills at 7, 3 and 1 days, unless you changed
+                  that in Preferences. Add a rule above to start earlier.
                 </p>
               </div>
             ) : (
@@ -104,6 +112,7 @@ export default async function RulesPage() {
                     ruleId={rule.id}
                     name={rule.name}
                     isActive={rule.isActive}
+                    days={rule.definition?.when?.daysUntil?.lte ?? null}
                   />
                 ))}
               </ul>
